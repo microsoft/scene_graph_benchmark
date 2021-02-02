@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -24,6 +25,17 @@ class ResNet50Conv5ROIFeatureExtractor(nn.Module):
             sampling_ratio=sampling_ratio,
         )
 
+        # ResNet50Conv5 input size is 1024, which is the default for backbone
+        # without FPN. For FPN structure, the in_channels will be 256. So we 
+        # need to add a transit conv layer to make it compatible.
+        # The corresponding predictor should be FastRCNNPredictor.
+        if in_channels != 1024:
+            self.trans_conv = nn.Conv2d(in_channels, 1024, kernel_size=3, padding=1) 
+            torch.nn.init.normal_(self.trans_conv.weight, std=0.01)
+            torch.nn.init.constant_(self.trans_conv.bias, 0)
+        else:
+            self.trans_conv = None
+
         stage = resnet.StageSpec(index=4, block_count=3, return_features=False)
         head = resnet.ResNetHead(
             block_module=config.MODEL.RESNETS.TRANS_FUNC,
@@ -42,6 +54,8 @@ class ResNet50Conv5ROIFeatureExtractor(nn.Module):
 
     def forward(self, x, proposals):
         x = self.pooler(x, proposals)
+        if self.trans_conv:
+            x = self.trans_conv(x)
         x = self.head(x)
         return x
 

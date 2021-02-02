@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import bisect
 import copy
 import logging
@@ -12,34 +13,48 @@ from . import datasets as D
 from . import samplers
 
 from .collate_batch import BatchCollator, BBoxAugCollator
+from .datasets.utils.config_args import config_tsv_dataset_args
 from .transforms import build_transforms
 
 
-def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
+def build_dataset(cfg, transforms, dataset_catalog, is_train=True):
     """
     Arguments:
-        dataset_list (list[str]): Contains the names of the datasets, i.e.,
-            coco_2014_train, coco_2014_val, etc
+        cfg: config file.
         transforms (callable): transforms to apply to each (image, target) sample
         dataset_catalog (DatasetCatalog): contains the information on how to
             construct a dataset.
         is_train (bool): whether to setup the dataset for training or testing
     """
+
+    dataset_list = cfg.DATASETS.TRAIN if is_train else cfg.DATASETS.TEST
+    factory_list = cfg.DATASETS.FACTORY_TRAIN if is_train else cfg.DATASETS.FACTORY_TEST
     if not isinstance(dataset_list, (list, tuple)):
         raise RuntimeError(
-            "dataset_list should be a list of strings, got {}".format(dataset_list)
-        )
+            "dataset_list should be a list of strings, got {}".format(dataset_list))
+    if not isinstance(factory_list, (list, tuple)):
+        raise RuntimeError(
+                "factory_list should be a list of strings, got {}".format(factory_list))
+
     datasets = []
-    for dataset_name in dataset_list:
-        data = dataset_catalog.get(dataset_name)
-        factory = getattr(D, data["factory"])
-        args = data["args"]
-        # for COCODataset, we want to remove images without annotations
-        # during training
-        if data["factory"] == "COCODataset":
-            args["remove_images_without_annotations"] = is_train
-        if data["factory"] == "PascalVOCDataset":
-            args["use_difficult"] = not is_train
+    for i, dataset_name in enumerate(dataset_list):
+        # added support for yaml input format of tsv datasets.
+        if dataset_name.endswith('.yaml'):
+            factory_name = factory_list[i] if i < len(factory_list) else None
+            args, tsv_dataset_name = config_tsv_dataset_args(
+                cfg, dataset_name, factory_name, is_train
+            )
+            factory = getattr(D, tsv_dataset_name)
+        else:
+            data = dataset_catalog.get(dataset_name)
+            factory = getattr(D, data["factory"])
+            args = data["args"]
+            # for COCODataset, we want to remove images without annotations
+            # during training
+            if data["factory"] == "COCODataset":
+                args["remove_images_without_annotations"] = is_train
+            if data["factory"] == "PascalVOCDataset":
+                args["use_difficult"] = not is_train
         args["transforms"] = transforms
         # make dataset from factory
         dataset = factory(**args)
@@ -149,11 +164,10 @@ def make_data_loader(cfg, is_train=True, is_distributed=False, start_iter=0, is_
         "maskrcnn_benchmark.config.paths_catalog", cfg.PATHS_CATALOG, True
     )
     DatasetCatalog = paths_catalog.DatasetCatalog
-    dataset_list = cfg.DATASETS.TRAIN if is_train else cfg.DATASETS.TEST
 
     # If bbox aug is enabled in testing, simply set transforms to None and we will apply transforms later
     transforms = None if not is_train and cfg.TEST.BBOX_AUG.ENABLED else build_transforms(cfg, is_train)
-    datasets = build_dataset(dataset_list, transforms, DatasetCatalog, is_train or is_for_period)
+    datasets = build_dataset(cfg, transforms, DatasetCatalog, is_train or is_for_period)
 
     if is_train:
         # save category_id to label name mapping

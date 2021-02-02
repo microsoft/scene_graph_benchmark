@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 from collections import OrderedDict
 
 from torch import nn
@@ -13,6 +14,7 @@ from . import resnet
 @registry.BACKBONES.register("R-50-C5")
 @registry.BACKBONES.register("R-101-C4")
 @registry.BACKBONES.register("R-101-C5")
+@registry.BACKBONES.register("R-152-C4")
 def build_resnet_backbone(cfg):
     body = resnet.ResNet(cfg)
     model = nn.Sequential(OrderedDict([("body", body)]))

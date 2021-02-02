@@ -1,0 +1,91 @@
+MODEL:
+  META_ARCHITECTURE: "SceneParser"
+  WEIGHT: "models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/model_final.pth"
+  USE_FREQ_PRIOR: False
+  FREQ_PRIOR: "visualgenome/label_danfeiX_clipped.freq_prior.npy"
+  RESNETS:
+    TRANS_FUNC: "BottleneckWithFixedBatchNorm"
+    BACKBONE_OUT_CHANNELS: 256
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+  ATTRIBUTE_ON: False
+  RELATION_ON: True
+  RPN:
+    USE_FPN: True
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    POSITIVE_FRACTION: 0.5
+    USE_FPN: True
+    SCORE_THRESH: 0.05 # 0.0001
+    DETECTIONS_PER_IMG: 100 # 600
+    MIN_DETECTIONS_PER_IMG: 1
+  ROI_BOX_HEAD:
+    NUM_CLASSES: 151
+    POOLER_RESOLUTION: 7
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POOLER_SAMPLING_RATIO: 2
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    MLP_HEAD_DIM: 1024
+  ATTRIBUTE_ON: False
+  RELATION_ON: True
+  ROI_RELATION_HEAD:
+    DETECTOR_PRE_CALCULATED: False
+    FORCE_RELATIONS: False
+    ALGORITHM: "sg_msdn"
+    MODE: 'sgdet'
+    USE_BIAS: False
+    FILTER_NON_OVERLAP: True
+    UPDATE_BOX_REG: False
+    SHARE_CONV_BACKBONE: False
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    SEPERATE_SO_FEATURE_EXTRACTOR: False
+    NUM_CLASSES: 51 # 10
+    POOLER_RESOLUTION: 7
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POOLER_SAMPLING_RATIO: 2
+    FEATURE_EXTRACTOR: "FPN2MLPRelationFeatureExtractor"
+    PREDICTOR: "FPNRelationPredictor"
+    CONTRASTIVE_LOSS:
+      USE_FLAG: False
+    TRIPLETS_PER_IMG: 100
+    POSTPROCESS_METHOD: 'constrained' # previously it's unconstrained
+    MSDN_FEATURE_UPDATE_STEP: 2
+INPUT:
+  MIN_SIZE_TRAIN: (600,)
+  MAX_SIZE_TRAIN: 1000
+  MIN_SIZE_TEST: 600
+  MAX_SIZE_TEST: 1000
+  PIXEL_MEAN: [103.530, 116.280, 123.675]
+DATASETS:
+  FACTORY_TRAIN: ("VGTSVDataset",)
+  FACTORY_TEST: ("VGTSVDataset",)
+  TRAIN: ("visualgenome/train_danfeiX_relation_nm.yaml",)
+  TEST: ("visualgenome/test_danfeiX_relation.yaml",)
+DATALOADER:
+  SIZE_DIVISIBILITY: 32
+  NUM_WORKERS: 4
+SOLVER:
+  BASE_LR: 0.015
+  WEIGHT_DECAY: 0.0001
+  MAX_ITER: 40000
+  STEPS: (20000,30000)
+  IMS_PER_BATCH: 16
+  CHECKPOINT_PERIOD: 5000
+TEST:
+  IMS_PER_BATCH: 8
+  SAVE_PREDICTIONS: False
+  SAVE_RESULTS_TO_TSV: True
+  TSV_SAVE_SUBSET: ['rect', 'class', 'conf', 'relations', 'relation_scores', 'relation_scores_all']
+  GATHER_ON_CPU: True
+  SKIP_PERFORMANCE_EVAL: False
+  OUTPUT_RELATION_FEATURE: False
+  OUTPUT_FEATURE: True # need this to output scores_all and box_all
+OUTPUT_DIR: "./models/relation_danfeiX_FPN50/"
+DATA_DIR: "./datasets"
+DISTRIBUTED_BACKEND: 'gloo'

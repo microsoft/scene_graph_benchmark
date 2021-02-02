@@ -1,0 +1,84 @@
+MODEL:
+    META_ARCHITECTURE: "SceneParser"
+    WEIGHT: "pretrained_model/sgg_model_zoo/oi_R152_imp_nobias.pth"
+    USE_FREQ_PRIOR: False
+    FREQ_PRIOR: "openimages_v5c/vrd/vrd_frequency_prior_include_background_update.npy"
+    BACKBONE:
+      CONV_BODY: "R-152-FPN"
+    RESNETS: 
+      BACKBONE_OUT_CHANNELS: 256
+      STRIDE_IN_1X1: False
+      NUM_GROUPS: 32
+      WIDTH_PER_GROUP: 8
+    RPN:
+      USE_FPN: True
+      ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+      PRE_NMS_TOP_N_TRAIN: 2000
+      PRE_NMS_TOP_N_TEST: 1000
+      FPN_POST_NMS_TOP_N_TRAIN: 1000
+      FPN_POST_NMS_TOP_N_TEST: 1000
+    ROI_HEADS:
+      USE_FPN: True
+      POSITIVE_FRACTION: 0.5
+      SCORE_THRESH: 0.05
+      DETECTIONS_PER_IMG: 100
+      MIN_DETECTIONS_PER_IMG: 2
+    ROI_BOX_HEAD:
+      NUM_CLASSES: 58
+      POOLER_RESOLUTION: 7
+      POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+      POOLER_SAMPLING_RATIO: 2
+      FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+      PREDICTOR: "FPNPredictor"
+    ATTRIBUTE_ON: False
+    RELATION_ON: True
+    ROI_RELATION_HEAD:
+      DETECTOR_PRE_CALCULATED: False
+      DETECTOR_BOX_THRESHOLD: 0.1
+      FORCE_RELATIONS: False
+      ALGORITHM: "sg_imp"
+      MODE: 'sgdet'
+      USE_BIAS: False
+      FILTER_NON_OVERLAP: True
+      UPDATE_BOX_REG: False
+      SHARE_CONV_BACKBONE: False
+      SHARE_BOX_FEATURE_EXTRACTOR: False
+      NUM_CLASSES: 10
+      POOLER_RESOLUTION: 7
+      POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+      POOLER_SAMPLING_RATIO: 2
+      FEATURE_EXTRACTOR: "FPN2MLPRelationFeatureExtractor"
+      PREDICTOR: "FPNRelationPredictor"
+      IMP_FEATURE_UPDATE_STEP: 2
+      MSDN_FEATURE_UPDATE_STEP: 2
+      GRCNN_FEATURE_UPDATE_STEP: 2
+      GRCNN_SCORE_UPDATE_STEP: 2
+      TRIPLETS_PER_IMG: 100
+      POSTPROCESS_METHOD: 'unconstrained'
+INPUT:
+    PIXEL_MEAN: [103.530, 116.280, 123.675]
+DATASETS:
+    TRAIN: ("openimages_v5c/vrd/train.vrd.challenge18.R152detector_pre_calculate.yaml",)
+    TEST: ("openimages_v5c/vrd/val.vrd.challenge18.R152detector_pre_calculate.yaml",)
+    LABELMAP_FILE: 'openimages_v5c/vrd/ji_vrd_labelmap.json'
+DATALOADER:
+    SIZE_DIVISIBILITY: 32
+    NUM_WORKERS: 8
+SOLVER:
+    BASE_LR: 0.005
+    WEIGHT_DECAY: 0.0001
+    MAX_ITER: 162000
+    STEPS: (97000, 129600)
+    IMS_PER_BATCH: 4
+    CHECKPOINT_PERIOD: 20000
+TEST:
+    IMS_PER_BATCH: 1
+    SAVE_PREDICTIONS: True
+    SAVE_RESULTS_TO_TSV: True
+    TSV_SAVE_SUBSET: ['rect', 'class', 'conf', 'relations', 'relation_scores']
+    GATHER_ON_CPU: True
+    SKIP_PERFORMANCE_EVAL: False
+    OUTPUT_RELATION_FEATURE: False
+OUTPUT_DIR: "./exps/X152FPN_imp_nobias"
+DATA_DIR: "./datasets"
+DISTRIBUTED_BACKEND: 'gloo'

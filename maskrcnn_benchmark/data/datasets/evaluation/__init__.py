@@ -1,8 +1,11 @@
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 from maskrcnn_benchmark.data import datasets
 
 from .coco import coco_evaluation
 from .voc import voc_evaluation
 from .cityscapes import abs_cityscapes_evaluation
+from .sg import sg_evaluation
+from .openimages_vrd import openimages_vrd_evaluation
 
 def evaluate(dataset, predictions, output_folder, **kwargs):
     """evaluate dataset using different methods based on dataset type.
@@ -22,6 +25,10 @@ def evaluate(dataset, predictions, output_folder, **kwargs):
         return coco_evaluation(**args)
     elif isinstance(dataset, datasets.PascalVOCDataset):
         return voc_evaluation(**args)
+    elif isinstance(dataset, datasets.OpenImagesVRDTSVDataset):
+        return openimages_vrd_evaluation(**args)
+    elif isinstance(dataset, datasets.VGTSVDataset):
+        return sg_evaluation(**args)
     elif isinstance(dataset, datasets.AbstractDataset):
         return abs_cityscapes_evaluation(**args)
     else:

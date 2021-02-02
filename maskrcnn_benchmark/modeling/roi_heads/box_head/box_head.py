@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import torch
 from torch import nn
 
@@ -49,7 +50,8 @@ class ROIBoxHead(torch.nn.Module):
         class_logits, box_regression = self.predictor(x)
 
         if not self.training:
-            result = self.post_processor((class_logits, box_regression), proposals)
+            result = self.post_processor((class_logits, box_regression),
+                                         proposals, x)
             return x, result, {}
 
         loss_classifier, loss_box_reg = self.loss_evaluator(

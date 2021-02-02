@@ -1,0 +1,19 @@
+{
+	"registrations": [
+
+		{
+			"component": {
+				"type": "git",
+				"git": {
+					"name": "maskrcnn_benchmark",
+					"repositoryUrl": "https://github.com/facebookresearch/maskrcnn-benchmark",
+					"commitHash": "57eec25b75144d9fb1a6857f32553e1574177daf"
+				}
+			},
+			"license": "MIT",
+			"version": "0.1",
+			"description": "object detection in pytorch"
+		}
+	],
+	"version": 1
+}

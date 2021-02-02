@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import datetime
 import logging
 import os
@@ -52,10 +53,10 @@ def do_train(
     checkpoint_period,
     test_period,
     arguments,
+    meters,
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info("Start training")
-    meters = MetricLogger(delimiter="  ")
     max_iter = len(data_loader)
     start_iter = arguments["iteration"]
     model.train()
@@ -69,7 +70,9 @@ def do_train(
         iou_types = iou_types + ("keypoints",)
     dataset_names = cfg.DATASETS.TEST
 
-    for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
+    for iteration, data_batch in enumerate(data_loader, start_iter):
+
+        images, targets, image_ids, scales = data_batch[0], data_batch[1], data_batch[2], data_batch[3:]
         
         if any(len(target) < 1 for target in targets):
             logger.error(f"Iteration={iteration + 1} || Image Ids used for training {_} || targets Length={[len(target) for target in targets]}" )
@@ -79,10 +82,17 @@ def do_train(
         arguments["iteration"] = iteration
 
         images = images.to(device)
-        targets = [target.to(device) for target in targets]
+        # targets = [target.to(device) for target in targets]
 
         loss_dict = model(images, targets)
 
+        # take care of additional metric besides loss returned from model
+        if type(loss_dict) == tuple:
+            other_metric = loss_dict[1]
+            meters.update_metrics(
+                {'other_metric': other_metric},
+            )
+            loss_dict = loss_dict[0]
         losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purposes
@@ -91,10 +101,11 @@ def do_train(
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
-        # Note: If mixed precision is not used, this ends up doing nothing
-        # Otherwise apply loss scaling for mixed-precision recipe
-        with amp.scale_loss(losses, optimizer) as scaled_losses:
-            scaled_losses.backward()
+        # # Note: If mixed precision is not used, this ends up doing nothing
+        # # Otherwise apply loss scaling for mixed-precision recipe
+        # with amp.scale_loss(losses, optimizer) as scaled_losses:
+        #     scaled_losses.backward()
+        losses.backward()
         optimizer.step()
         scheduler.step()
 
@@ -105,7 +116,7 @@ def do_train(
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
-        if iteration % 20 == 0 or iteration == max_iter:
+        if iteration % 1 == 0 or iteration == max_iter:
             logger.info(
                 meters.delimiter.join(
                     [
@@ -123,8 +134,7 @@ def do_train(
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
                 )
             )
-        if iteration % checkpoint_period == 0:
-            checkpointer.save("model_{:07d}".format(iteration), **arguments)
+
         if data_loader_val is not None and test_period > 0 and iteration % test_period == 0:
             meters_val = MetricLogger(delimiter="  ")
             synchronize()
@@ -172,8 +182,11 @@ def do_train(
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
                 )
             )
+
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
+        elif iteration % checkpoint_period == 0:
+            checkpointer.save("model_{:07d}".format(iteration), **arguments)
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))

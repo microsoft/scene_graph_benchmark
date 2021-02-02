@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import torch
 
 from .bounding_box import BoxList
@@ -119,6 +120,37 @@ def cat_boxlist(bboxes):
 
     fields = set(bboxes[0].fields())
     assert all(set(bbox.fields()) == fields for bbox in bboxes)
+
+    cat_boxes = BoxList(_cat([bbox.bbox for bbox in bboxes], dim=0), size, mode)
+
+    for field in fields:
+        data = _cat([bbox.get_field(field) for bbox in bboxes], dim=0)
+        cat_boxes.add_field(field, data)
+
+    return cat_boxes
+
+
+def cat_boxlist_with_fields(bboxes, fields):
+    """
+    Concatenates a list of BoxList (having the same image size) into a
+    single BoxList. If fields is None, bboxes need to have same fields. 
+    If fields is not None, only copy fields.
+
+    Arguments:
+        bboxes (list[BoxList])
+        fields (list[string])
+    """
+    assert isinstance(bboxes, (list, tuple))
+    assert all(isinstance(bbox, BoxList) for bbox in bboxes)
+
+    size = bboxes[0].size
+    assert all(bbox.size == size for bbox in bboxes)
+
+    mode = bboxes[0].mode
+    assert all(bbox.mode == mode for bbox in bboxes)
+
+    fields = set(fields)
+    assert all(fields.issubset(set(bbox.fields())) for bbox in bboxes)
 
     cat_boxes = BoxList(_cat([bbox.bbox for bbox in bboxes], dim=0), size, mode)
 

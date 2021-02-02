@@ -1,41 +1,23 @@
-# Faster R-CNN and Mask R-CNN in PyTorch 1.0
+# Scene Graph Benchmark in PyTorch 1.4
 
-**maskrcnn-benchmark has been deprecated. Please see [detectron2](https://github.com/facebookresearch/detectron2), which includes implementations for all models in maskrcnn-benchmark**
+**This project is based on [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark)**
 
 This project aims at providing the necessary building blocks for easily
 creating detection and segmentation models using PyTorch 1.0.
 
-![alt text](demo/demo_e2e_mask_rcnn_X_101_32x8d_FPN_1x.png "from http://cocodataset.org/#explore?id=345434")
+![alt text](demo/R152FPN_demo.png "from https://storage.googleapis.com/openimages/web/index.html")
+
 
 ## Highlights
-- **PyTorch 1.0:** RPN, Faster R-CNN and Mask R-CNN implementations that matches or exceeds Detectron accuracies
-- **Very fast**: up to **2x** faster than [Detectron](https://github.com/facebookresearch/Detectron) and **30%** faster than [mmdetection](https://github.com/open-mmlab/mmdetection) during training. See [MODEL_ZOO.md](MODEL_ZOO.md) for more details.
-- **Memory efficient:** uses roughly 500MB less GPU memory than mmdetection during training
+- **Upgrad to pytorch 1.4 (can also upgrade to 1.7)**
 - **Multi-GPU training and inference**
-- **Mixed precision training:** trains faster with less GPU memory on [NVIDIA tensor cores](https://developer.nvidia.com/tensor-cores).
-- **Batched inference:** can perform inference using multiple images per batch per GPU
-- **CPU support for inference:** runs on CPU in inference time. See our [webcam demo](demo) for an example
-- Provides pre-trained models for almost all reference Mask R-CNN and Faster R-CNN configurations with 1x schedule.
+- **Batched inference:** can perform inference using multiple images per batch per GPU.
+- **Fast and flexible tsv dataset format**
+- **Remove FasterRCNN detector dependency:** during relation head training, can plugin bounding boxes from any detector.
+- Provides pre-trained models for different scene graph detection algorithms ([IMP](https://arxiv.org/pdf/1701.02426.pdf), [MSDN](http://cvboy.com/publication/iccv2017_msdn/), [GRCNN](https://arxiv.org/pdf/1808.00191.pdf), [Neural Motif](https://arxiv.org/pdf/1711.06640.pdf), [RelDN](https://arxiv.org/pdf/1903.02728.pdf)).
+- Provides bounding box level and relation level feature extraction functionalities
+- Provides large detector backbones (ResNxt152)
 
-## Webcam and Jupyter notebook demo
-
-We provide a simple webcam demo that illustrates how you can use `maskrcnn_benchmark` for inference:
-```bash
-cd demo
-# by default, it runs on the GPU
-# for best results, use min-image-size 800
-python webcam.py --min-image-size 800
-# can also run it on the CPU
-python webcam.py --min-image-size 300 MODEL.DEVICE cpu
-# or change the model that you want to use
-python webcam.py --config-file ../configs/caffe2/e2e_mask_rcnn_R_101_FPN_1x_caffe2.yaml --min-image-size 300 MODEL.DEVICE cpu
-# in order to see the probability heatmaps, pass --show-mask-heatmaps
-python webcam.py --min-image-size 300 --show-mask-heatmaps MODEL.DEVICE cpu
-# for the keypoint demo
-python webcam.py --config-file ../configs/caffe2/e2e_keypoint_rcnn_R_50_FPN_1x_caffe2.yaml --min-image-size 300 MODEL.DEVICE cpu
-```
-
-A notebook with the demo can be found in [demo/Mask_R-CNN_demo.ipynb](demo/Mask_R-CNN_demo.ipynb).
 
 ## Installation
 
@@ -44,104 +26,56 @@ Check [INSTALL.md](INSTALL.md) for installation instructions.
 
 ## Model Zoo and Baselines
 
-Pre-trained models, baselines and comparison with Detectron and mmdetection
-can be found in [MODEL_ZOO.md](MODEL_ZOO.md)
+Pre-trained models can be found in [SCENE_GRAPH_MODEL_ZOO.md](SCENE_GRAPH_MODEL_ZOO.md)
 
-## Inference in a few lines
-We provide a helper class to simplify writing inference pipelines using pre-trained models.
-Here is how we would do it. Run this from the `demo` folder:
-```python
-from maskrcnn_benchmark.config import cfg
-from predictor import COCODemo
+## Visualization and Demo
+We provide a helper class to simplify writing inference pipelines using pre-trained models (Currently only support objects and attributes).
+Here is how we would do it. Run the following commands:
+```bash
+# visualize VinVL object detection
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
+python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.yaml --img_file ../maskrcnn-benchmark-1/datasets1/imgs/woman_fish.jpg --save_file output/woman_fish_x152c4.obj.jpg MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION False
 
-config_file = "../configs/caffe2/e2e_mask_rcnn_R_50_FPN_1x_caffe2.yaml"
+# visualize VinVL object-attribute detection
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
+python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.yaml --img_file ../maskrcnn-benchmark-1/datasets1/imgs/woman_fish.jpg --save_file output/woman_fish_x152c4.attr.jpg --visualize_attr MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION False
 
-# update the config options with the config file
-cfg.merge_from_file(config_file)
-# manual override some options
-cfg.merge_from_list(["MODEL.DEVICE", "cpu"])
+# visualize OpenImage scene graph generation by RelDN
+python tools/demo/demo_image.py --config_file sgg_configs/vrd/R152FPN_vrd_reldn.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_output.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False
 
-coco_demo = COCODemo(
-    cfg,
-    min_image_size=800,
-    confidence_threshold=0.7,
-)
-# load image and then run prediction
-image = ...
-predictions = coco_demo.run_on_opencv_image(image)
+# visualize Visual Genome scene graph generation by neural motif
+python tools/demo/demo_image.py --config_file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_vgnm.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False DATASETS.LABELMAP_FILE "visualgenome/VG-SGG-dicts-danfeiX-clipped.json" DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2
 ```
 
-## Perform training on COCO dataset
+## Perform training
 
-For the following examples to work, you need to first install `maskrcnn_benchmark`.
+For the following examples to work, you need to first install this repo.
 
-You will also need to download the COCO dataset.
-We recommend to symlink the path to the coco dataset to `datasets/` as follows
-
-We use `minival` and `valminusminival` sets from [Detectron](https://github.com/facebookresearch/Detectron/blob/master/detectron/datasets/data/README.md#coco-minival-annotations)
+You will also need to download the dataset.
+We recommend to symlink the path to the dataset to `datasets/` as follows
 
 ```bash
-# symlink the coco dataset
+# symlink the dataset
 cd ~/github/maskrcnn-benchmark
-mkdir -p datasets/coco
-ln -s /path_to_coco_dataset/annotations datasets/coco/annotations
-ln -s /path_to_coco_dataset/train2014 datasets/coco/train2014
-ln -s /path_to_coco_dataset/test2014 datasets/coco/test2014
-ln -s /path_to_coco_dataset/val2014 datasets/coco/val2014
-# or use COCO 2017 version
-ln -s /path_to_coco_dataset/annotations datasets/coco/annotations
-ln -s /path_to_coco_dataset/train2017 datasets/coco/train2017
-ln -s /path_to_coco_dataset/test2017 datasets/coco/test2017
-ln -s /path_to_coco_dataset/val2017 datasets/coco/val2017
-
-# for pascal voc dataset:
-ln -s /path_to_VOCdevkit_dir datasets/voc
+mkdir -p datasets/openimages_v5c/
+ln -s /vrd datasets/openimages_v5c/vrd
 ```
 
-P.S. `COCO_2017_train` = `COCO_2014_train` + `valminusminival` , `COCO_2017_val` = `minival`
-      
+You can also prepare your own datasets.
 
-You can also configure your own paths to the datasets.
-For that, all you need to do is to modify `maskrcnn_benchmark/config/paths_catalog.py` to
-point to the location where your dataset is stored.
-You can also create a new `paths_catalog.py` file which implements the same two classes,
-and pass it as a config argument `PATHS_CATALOG` during training.
+Follow tsv dataset creation instructions [tools/mini_tsv/README.md](tools/mini_tsv/README.md)
+
 
 ### Single GPU training
 
-Most of the configuration files that we provide assume that we are running on 8 GPUs.
-In order to be able to run it on fewer GPUs, there are a few possibilities:
-
-**1. Run the following without modifications**
-
 ```bash
-python /path_to_maskrcnn_benchmark/tools/train_net.py --config-file "/path/to/config/file.yaml"
+python tools/train_sg_net.py --config-file "/path/to/config/file.yaml"
 ```
 This should work out of the box and is very similar to what we should do for multi-GPU training.
-But the drawback is that it will use much more GPU memory. The reason is that we set in the
-configuration files a global batch size that is divided over the number of GPUs. So if we only
-have a single GPU, this means that the batch size for that GPU will be 8x larger, which might lead
-to out-of-memory errors.
+But the drawback is that it will use much more GPU memory. The reason is that we set in the configuration files a global batch size that is divided over the number of GPUs. So if we only have a single GPU, this means that the batch size for that GPU will be 4x larger, which might lead to out-of-memory errors.
 
-If you have a lot of memory available, this is the easiest solution.
-
-**2. Modify the cfg parameters**
-
-If you experience out-of-memory errors, you can reduce the global batch size. But this means that
-you'll also need to change the learning rate, the number of iterations and the learning rate schedule.
-
-Here is an example for Mask R-CNN R-50 FPN with the 1x schedule:
-```bash
-python tools/train_net.py --config-file "configs/e2e_mask_rcnn_R_50_FPN_1x.yaml" SOLVER.IMS_PER_BATCH 2 SOLVER.BASE_LR 0.0025 SOLVER.MAX_ITER 720000 SOLVER.STEPS "(480000, 640000)" TEST.IMS_PER_BATCH 1 MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN 2000
-```
-This follows the [scheduling rules from Detectron.](https://github.com/facebookresearch/Detectron/blob/master/configs/getting_started/tutorial_1gpu_e2e_faster_rcnn_R-50-FPN.yaml#L14-L30)
-Note that we have multiplied the number of iterations by 8x (as well as the learning rate schedules),
-and we have divided the learning rate by 8x.
-
-We also changed the batch size during testing, but that is generally not necessary because testing
-requires much less memory than training.
-
-Furthermore, we set `MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN 2000` as the proposals are selected for per the batch rather than per image in the default training. The value is calculated by **1000 x images-per-gpu**. Here we have 2 images per GPU, therefore we set the number as 1000 x 2 = 2000. If we have 8 images per GPU, the value should be set as 8000. Note that this does not apply if `MODEL.RPN.FPN_POST_NMS_PER_BATCH` is set to `False` during training. See [#672](https://github.com/facebookresearch/maskrcnn-benchmark/issues/672) for more details.
 
 ### Multi-GPU training
 We use internally `torch.distributed.launch` in order to launch
@@ -150,98 +84,125 @@ Python processes as the number of GPUs we want to use, and each Python
 process will only use a single GPU.
 
 ```bash
-export NGPUS=8
-python -m torch.distributed.launch --nproc_per_node=$NGPUS /path_to_maskrcnn_benchmark/tools/train_net.py --config-file "path/to/config/file.yaml" MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN images_per_gpu x 1000
+export NGPUS=4
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/train_sg_net.py --config-file "path/to/config/file.yaml" 
 ```
-Note we should set `MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN` follow the rule in Single-GPU training.
 
-### Mixed precision training
-We currently use [APEX](https://github.com/NVIDIA/apex) to add [Automatic Mixed Precision](https://developer.nvidia.com/automatic-mixed-precision) support. To enable, just do Single-GPU or Multi-GPU training and set `DTYPE "float16"`.
-
-```bash
-export NGPUS=8
-python -m torch.distributed.launch --nproc_per_node=$NGPUS /path_to_maskrcnn_benchmark/tools/train_net.py --config-file "path/to/config/file.yaml" MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN images_per_gpu x 1000 DTYPE "float16"
-```
-If you want more verbose logging, set `AMP_VERBOSE True`. See [Mixed Precision Training guide](https://docs.nvidia.com/deeplearning/sdk/mixed-precision-training/index.html) for more details.
 
 ## Evaluation
-You can test your model directly on single or multiple gpus. Here is an example for Mask R-CNN R-50 FPN with the 1x schedule on 8 GPUS:
+You can test your model directly on single or multiple gpus. 
+To evaluate relations, one needs to output "relation_scores_all" in the TSV_SAVE_SUBSET.
+Here are a few example command line for evaluating on 4 GPUS:
 ```bash
-export NGPUS=8
-python -m torch.distributed.launch --nproc_per_node=$NGPUS /path_to_maskrcnn_benchmark/tools/test_net.py --config-file "configs/e2e_mask_rcnn_R_50_FPN_1x.yaml" TEST.IMS_PER_BATCH 16
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH 
+
+# vg IMP evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_imp.yaml
+
+# vg MSDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_msdn.yaml
+
+# vg neural motif evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml
+
+# vg GRCNN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_grcnn.yaml
+
+# vg RelDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_reldn.yaml
+
+# oi IMP evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_imp_bias_oi.yaml
+
+# oi MSDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_msdn_bias_oi.yaml
+
+# oi neural motif evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_motif_oi.yaml
+
+# oi GRCNN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_grcnn_oi.yaml
+
+# oi RelDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vrd/R152FPN_vrd_reldn.yaml
 ```
-To calculate mAP for each class, you can simply modify a few lines in [coco_eval.py](https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/maskrcnn_benchmark/data/datasets/evaluation/coco/coco_eval.py). See [#524](https://github.com/facebookresearch/maskrcnn-benchmark/issues/524#issuecomment-475118810) for more details.
+
+To evaluate in sgcls mode:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_BOX_HEAD.FORCE_BOXES True MODEL.ROI_RELATION_HEAD.MODE "sgcls"
+```
+
+To evaluate in predcls mode:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_RELATION_HEAD.MODE "predcls"
+```
+
+To evaluate with ground truth bbox and ground truth pairs:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS True
+```
+
 
 ## Abstractions
 For more information on some of the main abstractions in our implementation, see [ABSTRACTIONS.md](ABSTRACTIONS.md).
 
 ## Adding your own dataset
 
-This implementation adds support for COCO-style datasets.
+This implementation adds support for TSV style datasets.
 But adding support for training on a new dataset can be done as follows:
+
 ```python
-from maskrcnn_benchmark.structures.bounding_box import BoxList
+from maskrcnn_benchmark.data.datasets.relation_tsv import RelationTSVDataset
 
-class MyDataset(object):
-    def __init__(self, ...):
-        # as you would do normally
+class MyDataset(RelationTSVDataset):
+    def __init__(self, yaml_file, extra_fields=(), transforms=None,
+            is_load_label=True, **kwargs):
 
-    def __getitem__(self, idx):
-        # load the image as a PIL Image
-        image = ...
-
-        # load the bounding boxes as a list of list of boxes
-        # in this case, for illustrative purposes, we use
-        # x1, y1, x2, y2 order.
-        boxes = [[0, 0, 10, 10], [10, 20, 50, 50]]
-        # and labels
-        labels = torch.tensor([10, 20])
-
-        # create a BoxList from the boxes
-        boxlist = BoxList(boxes, image.size, mode="xyxy")
-        # add the labels to the boxlist
-        boxlist.add_field("labels", labels)
-
-        if self.transforms:
-            image, boxlist = self.transforms(image, boxlist)
-
-        # return the image, the boxlist and the idx in your dataset
-        return image, boxlist, idx
-
-    def get_img_info(self, idx):
-        # get img_height and img_width. This is used if
-        # we want to split the batches according to the aspect ratio
-        # of the image, as it can be more efficient than loading the
-        # image from disk
-        return {"height": img_height, "width": img_width}
+        super(MyDataset, self).__init__(yaml_file, extra_fields, transforms, is_load_label, **kwargs)
+    
+    def your_own_function(self, idx, call=False):
+        # you can overwrite function or add your own functions this way
+        pass
 ```
 That's it. You can also add extra fields to the boxlist, such as segmentation masks
 (using `structures.segmentation_mask.SegmentationMask`), or even your own instance type.
 
-For a full example of how the `COCODataset` is implemented, check [`maskrcnn_benchmark/data/datasets/coco.py`](maskrcnn_benchmark/data/datasets/coco.py).
+For a full example of how the `VGTSVDataset` is implemented, check [`maskrcnn_benchmark/data/datasets/vg_tsv.py`](maskrcnn_benchmark/data/datasets/vg_tsv.py).
 
 Once you have created your dataset, it needs to be added in a couple of places:
 - [`maskrcnn_benchmark/data/datasets/__init__.py`](maskrcnn_benchmark/data/datasets/__init__.py): add it to `__all__`
-- [`maskrcnn_benchmark/config/paths_catalog.py`](maskrcnn_benchmark/config/paths_catalog.py): `DatasetCatalog.DATASETS` and corresponding `if` clause in `DatasetCatalog.get()`
+- [`maskrcnn_benchmark/data/datasets/utils/config_args.py`](maskrcnn_benchmark/data/datasets/utils/config_args.py): add it's name as an option to `tsv_dataset_name`
 
-### Testing
-While the aforementioned example should work for training, we leverage the
-cocoApi for computing the accuracies during testing. Thus, test datasets
-should currently follow the cocoApi for now.
 
+### Adding your own evaluation
 To enable your dataset for testing, add a corresponding if statement in [`maskrcnn_benchmark/data/datasets/evaluation/__init__.py`](maskrcnn_benchmark/data/datasets/evaluation/__init__.py):
 ```python
 if isinstance(dataset, datasets.MyDataset):
-        return coco_evaluation(**args)
+        return your_evaluation(**args)
 ```
 
-## Finetuning from Detectron weights on custom datasets
-Create a script `tools/trim_detectron_model.py` like [here](https://gist.github.com/wangg12/aea194aa6ab6a4de088f14ee193fd968).
-You can decide which keys to be removed and which keys to be kept by modifying the script.
 
-Then you can simply point the converted model path in the config file by changing `MODEL.WEIGHT`.
+## VinVL Feature extraction
 
-For further information, please refer to [#15](https://github.com/facebookresearch/maskrcnn-benchmark/issues/15).
+The output feature will be encoded as base64
+```bash
+# extract vision features with VinVL object-attribute detection model
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
+python tools/test_sg_net.py --config-file sgg_configs/vgattr/vinvl_x152c4.yaml TEST.IMS_PER_BATCH 2 MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION True MODEL.ATTRIBUTE_ON True
+```
+To extract relation features (union bounding box's feature), in yaml file, set `TEST.OUTPUT_RELATION_FEATURE` to  `True`, add `relation_feature` in `TEST.TSV_SAVE_SUBSET`. 
+
+To extract bounding box features, in yaml file, set `TEST.OUTPUT_FEATURE` to  `True`, add `feature` in `TEST.TSV_SAVE_SUBSET`.
+
 
 ## Troubleshooting
 If you have issues running or compiling this code, we have compiled a list of common issues in
@@ -251,30 +212,19 @@ free to open a new issue.
 ## Citations
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry requires the `url` LaTeX package.
 ```
-@misc{massa2018mrcnn,
-author = {Massa, Francisco and Girshick, Ross},
-title = {{maskrcnn-benchmark: Fast, modular reference implementation of Instance Segmentation and Object Detection algorithms in PyTorch}},
-year = {2018},
-howpublished = {\url{https://github.com/facebookresearch/maskrcnn-benchmark}},
+@misc{han2021sgbenchmark,
+author = {Xiaotian Han and Jianwei Yang and Houdong Hu and Lei Zhang and Pengchuan Zhang},
+title = {{Scene Graph Benchmark}},
+year = {2021},
+howpublished = {\url{https://github.com/microsoft/scene_graph_benchmark}},
 note = {Accessed: [Insert date here]}
 }
+
 ```
 
-## Projects using maskrcnn-benchmark
-
-- [RetinaMask: Learning to predict masks improves state-of-the-art single-shot detection for free](https://arxiv.org/abs/1901.03353). 
-  Cheng-Yang Fu, Mykhailo Shvets, and Alexander C. Berg.
-  Tech report, arXiv,1901.03353.
-- [FCOS: Fully Convolutional One-Stage Object Detection](https://arxiv.org/abs/1904.01355).
-  Zhi Tian, Chunhua Shen, Hao Chen and Tong He.
-  Tech report, arXiv,1904.01355. [[code](https://github.com/tianzhi0549/FCOS)]
-- [MULAN: Multitask Universal Lesion Analysis Network for Joint Lesion Detection, Tagging, and Segmentation](https://arxiv.org/abs/1908.04373).
-  Ke Yan, Youbao Tang, Yifan Peng, Veit Sandfort, Mohammadhadi Bagheri, Zhiyong Lu, and Ronald M. Summers.
-  MICCAI 2019. [[code](https://github.com/rsummers11/CADLab/tree/master/MULAN_universal_lesion_analysis)]
-- [Is Sampling Heuristics Necessary in Training Deep Object Detectors?](https://arxiv.org/abs/1909.04868)
-  Joya Chen, Dong Liu, Tong Xu, Shilong Zhang, Shiwei Wu, Bin Luo, Xuezheng Peng, Enhong Chen.
-  Tech report, arXiv,1909.04868. [[code](https://github.com/ChenJoya/sampling-free)]
   
 ## License
 
 maskrcnn-benchmark is released under the MIT license. See [LICENSE](LICENSE) for additional details.
+
+## Acknowledgement
