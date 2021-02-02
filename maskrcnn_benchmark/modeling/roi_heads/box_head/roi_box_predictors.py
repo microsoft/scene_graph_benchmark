@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 from maskrcnn_benchmark.modeling import registry
 from torch import nn
 
@@ -23,11 +24,16 @@ class FastRCNNPredictor(nn.Module):
         nn.init.normal_(self.bbox_pred.weight, mean=0, std=0.001)
         nn.init.constant_(self.bbox_pred.bias, 0)
 
+        self.ignore_box_regression = config.TEST.IGNORE_BOX_REGRESSION
+
     def forward(self, x):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         cls_logit = self.cls_score(x)
-        bbox_pred = self.bbox_pred(x)
+        if self.ignore_box_regression:
+            bbox_pred = None
+        else:
+            bbox_pred = self.bbox_pred(x)
         return cls_logit, bbox_pred
 
 
@@ -47,12 +53,17 @@ class FPNPredictor(nn.Module):
         for l in [self.cls_score, self.bbox_pred]:
             nn.init.constant_(l.bias, 0)
 
+        self.ignore_box_regression = cfg.TEST.IGNORE_BOX_REGRESSION
+
     def forward(self, x):
         if x.ndimension() == 4:
             assert list(x.shape[2:]) == [1, 1]
             x = x.view(x.size(0), -1)
         scores = self.cls_score(x)
-        bbox_deltas = self.bbox_pred(x)
+        if self.ignore_box_regression:
+            bbox_deltas = None
+        else:
+            bbox_deltas = self.bbox_pred(x)
 
         return scores, bbox_deltas
 

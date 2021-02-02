@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import os
 
 from yacs.config import CfgNode as CN
@@ -70,8 +71,12 @@ _C.INPUT.VERTICAL_FLIP_PROB_TRAIN = 0.0
 _C.DATASETS = CN()
 # List of the dataset names for training, as present in paths_catalog.py
 _C.DATASETS.TRAIN = ()
+# List of dataset class names for training
+_C.DATASETS.FACTORY_TRAIN = ()
 # List of the dataset names for testing, as present in paths_catalog.py
 _C.DATASETS.TEST = ()
+# List of dataset class names for testing
+_C.DATASETS.FACTORY_TEST = ()
 
 # -----------------------------------------------------------------------------
 # DataLoader
@@ -86,6 +91,8 @@ _C.DATALOADER.SIZE_DIVISIBILITY = 0
 # is compatible. This groups portrait images together, and landscape images
 # are not batched with portrait images.
 _C.DATALOADER.ASPECT_RATIO_GROUPING = True
+# Labelmap file to convert to tsv or for demo purpose
+_C.DATASETS.LABELMAP_FILE = ''
 
 
 # ---------------------------------------------------------------------------- #
@@ -206,6 +213,12 @@ _C.MODEL.ROI_HEADS.NMS = 0.5
 # Maximum number of detections to return per image (100 is based on the limit
 # established for the COCO dataset)
 _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
+# Minimum number of detections to return per image (going to be enforces with
+# binary search on MODEL.ROI_HEADS.SCORE_THRESH
+_C.MODEL.ROI_HEADS.MIN_DETECTIONS_PER_IMG = 0
+
+# use Peter Anderson's or Class-Agnostic NMS post processing
+_C.MODEL.ROI_HEADS.NMS_FILTER = 0
 
 
 _C.MODEL.ROI_BOX_HEAD = CN()
@@ -420,6 +433,12 @@ _C.SOLVER.IMS_PER_BATCH = 16
 # Specific test options
 # ---------------------------------------------------------------------------- #
 _C.TEST = CN()
+# whether to save final predictions directly into a pickle file or not
+_C.TEST.SAVE_PREDICTIONS = False
+_C.TEST.SAVE_RESULTS_TO_TSV = False
+# only these fields will be saved to tsv. Full list:
+# ['class', 'conf', 'rect', 'feature', 'scores_all']
+_C.TEST.TSV_SAVE_SUBSET = ['rect', 'class', 'conf']
 _C.TEST.EXPECTED_RESULTS = []
 _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 # Number of images per batch
@@ -428,6 +447,12 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 _C.TEST.IMS_PER_BATCH = 8
 # Number of detections per image
 _C.TEST.DETECTIONS_PER_IMG = 100
+# whether to use CPU to do gather of predictions. Note that this requires
+# running with "gloo" (or "mpi") distributed backend
+_C.TEST.GATHER_ON_CPU = False
+# if set true, will not do evaluation after inference,
+# useful for tsv dataset without label
+_C.TEST.SKIP_PERFORMANCE_EVAL = False
 
 # ---------------------------------------------------------------------------- #
 # Test-time augmentations for bounding box detection
@@ -450,11 +475,17 @@ _C.TEST.BBOX_AUG.MAX_SIZE = 4000
 # Horizontal flip at each scale
 _C.TEST.BBOX_AUG.SCALE_H_FLIP = False
 
+# Output feature
+_C.TEST.OUTPUT_FEATURE = False
+_C.TEST.IGNORE_BOX_REGRESSION = False
+
 
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #
 _C.OUTPUT_DIR = "."
+_C.DATA_DIR = "./datasets"
+_C.DISTRIBUTED_BACKEND = "nccl"  # could be "nccl", "gloo" or "mpi"
 
 _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
 

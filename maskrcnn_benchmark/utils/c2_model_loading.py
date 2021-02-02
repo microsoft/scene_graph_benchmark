@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import logging
 import pickle
 from collections import OrderedDict
@@ -183,6 +184,7 @@ C2_FORMAT_LOADER = Registry()
 @C2_FORMAT_LOADER.register("R-50-C5")
 @C2_FORMAT_LOADER.register("R-101-C4")
 @C2_FORMAT_LOADER.register("R-101-C5")
+@C2_FORMAT_LOADER.register("R-152-C4")
 @C2_FORMAT_LOADER.register("R-50-FPN")
 @C2_FORMAT_LOADER.register("R-50-FPN-RETINANET")
 @C2_FORMAT_LOADER.register("R-101-FPN")

@@ -9,6 +9,7 @@ import os
 import torch
 from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.data import make_data_loader
+from maskrcnn_benchmark.data.datasets.utils.load_files import config_dataset_file
 from maskrcnn_benchmark.engine.inference import inference
 from maskrcnn_benchmark.modeling.detector import build_detection_model
 from maskrcnn_benchmark.utils.checkpoint import DetectronCheckpointer
@@ -50,16 +51,16 @@ def main():
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
     distributed = num_gpus > 1
 
-    if distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(
-            backend="nccl", init_method="env://"
-        )
-        synchronize()
-
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
+
+    if distributed:
+        torch.cuda.set_device(args.local_rank)
+        torch.distributed.init_process_group(
+            backend=cfg.DISTRIBUTED_BACKEND, init_method="env://"
+        )
+        synchronize()
 
     save_dir = ""
     logger = setup_logger("maskrcnn_benchmark", save_dir, get_rank())
@@ -94,9 +95,11 @@ def main():
             mkdir(output_folder)
             output_folders[idx] = output_folder
     data_loaders_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
+    labelmap_file = config_dataset_file(cfg.DATA_DIR, cfg.DATASETS.LABELMAP_FILE)
     for output_folder, dataset_name, data_loader_val in zip(output_folders, dataset_names, data_loaders_val):
         inference(
             model,
+            cfg,
             data_loader_val,
             dataset_name=dataset_name,
             iou_types=iou_types,
@@ -106,6 +109,9 @@ def main():
             expected_results=cfg.TEST.EXPECTED_RESULTS,
             expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
             output_folder=output_folder,
+            skip_performance_eval=cfg.TEST.SKIP_PERFORMANCE_EVAL,
+            labelmap_file=labelmap_file,
+            save_predictions=cfg.TEST.SAVE_PREDICTIONS,
         )
         synchronize()
 

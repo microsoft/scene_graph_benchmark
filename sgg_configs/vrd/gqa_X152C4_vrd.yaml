@@ -1,0 +1,71 @@
+MODEL:
+    META_ARCHITECTURE: "SceneParser"
+    WEIGHT: "pretrained_model/gqa/gqa_X152C4_vrdvgvrd_lr0.003_bsz8_objscore005_nooverlap/model_0080000.pth"
+    USE_FREQ_PRIOR: True
+    FREQ_PRIOR: "visualgenome/label_vg2gqa_saeed_frequency_prior_include_background.npy"
+    BACKBONE:
+      CONV_BODY: "R-152-C4"
+    RESNETS:
+      BACKBONE_OUT_CHANNELS: 1024
+      STRIDE_IN_1X1: False
+      NUM_GROUPS: 32
+      WIDTH_PER_GROUP: 8
+    RPN:
+      PRE_NMS_TOP_N_TEST: 6000
+      POST_NMS_TOP_N_TEST: 300
+    ROI_HEADS:
+      BATCH_SIZE_PER_IMAGE: 384 # 512
+      POSITIVE_FRACTION: 0.5 # 0.25
+      SCORE_THRESH: 0.05 # 0.0001
+      DETECTIONS_PER_IMG: 100 # 600
+      MIN_DETECTIONS_PER_IMG: 10
+    ROI_BOX_HEAD:
+      NUM_CLASSES: 1223
+    ROI_ATTRIBUTE_HEAD:
+      NUM_ATTRIBUTES: 245
+    ATTRIBUTE_ON: False
+    RELATION_ON: True
+    ROI_RELATION_HEAD:
+      DETECTOR_PRE_CALCULATED: False
+      FORCE_RELATIONS: False
+      ALGORITHM: "sg_reldn"
+      MODE: 'sgdet'
+      USE_BIAS: False
+      FILTER_NON_OVERLAP: True
+      UPDATE_BOX_REG: False
+      SHARE_CONV_BACKBONE: False
+      SHARE_BOX_FEATURE_EXTRACTOR: False
+      SEPERATE_SO_FEATURE_EXTRACTOR: True
+      NUM_CLASSES: 275
+      FEATURE_EXTRACTOR: "ResNet50Conv5ROIRelationFeatureExtractor"
+      PREDICTOR: "FastRCNNRelationPredictor"
+      CONTRASTIVE_LOSS:
+        USE_FLAG: True
+      TRIPLETS_PER_IMG: 100
+      POSTPROCESS_METHOD: 'constrained'
+INPUT:
+    PIXEL_MEAN: [103.530, 116.280, 123.675]
+DATASETS:
+    FACTORY_TRAIN: ("VGTSVDataset",)
+    FACTORY_TEST: ("VGTSVDataset",)
+    TRAIN: ("gqa/train.vrd.saeed.x152c4detector_pre_calculate.yaml",)
+    # TEST: ("gqa/val.vrd.saeed.x152c4detector_pre_calculate.yaml",)
+    TEST: ("gqa/val.fake.vrd.saeed.yaml",)
+DATALOADER:
+    NUM_WORKERS: 0
+SOLVER:
+    BASE_LR: 0.01
+    WEIGHT_DECAY: 0.0001
+    MAX_ITER: 90000
+    STEPS: (49000, 65000)
+    IMS_PER_BATCH: 1
+    CHECKPOINT_PERIOD: 10000
+TEST:
+    IMS_PER_BATCH: 1
+    SAVE_PREDICTIONS: True
+    SAVE_RESULTS_TO_TSV: True
+    TSV_SAVE_SUBSET: ['rect', 'class', 'conf', 'relations', 'relation_scores', 'relation_scores_all']
+    GATHER_ON_CPU: True
+OUTPUT_DIR: "./exps/X152C5_test"
+DATA_DIR: "./datasets"
+DISTRIBUTED_BACKEND: 'gloo'

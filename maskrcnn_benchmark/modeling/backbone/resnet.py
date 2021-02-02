@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 """
 Variant of the resnet module that takes cfg as an argument.
 Example usage. Strings may be specified in the config file.
@@ -76,6 +77,11 @@ ResNet101FPNStagesTo5 = tuple(
 ResNet152FPNStagesTo5 = tuple(
     StageSpec(index=i, block_count=c, return_features=r)
     for (i, c, r) in ((1, 3, True), (2, 8, True), (3, 36, True), (4, 3, True))
+)
+# ResNet-152 up to stage 4 (excludes stage 5)
+ResNet152StagesTo4 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 3, False), (2, 8, False), (3, 36, True))
 )
 
 class ResNet(nn.Module):
@@ -354,6 +360,7 @@ class BaseStem(nn.Module):
             3, out_channels, kernel_size=7, stride=2, padding=3, bias=False
         )
         self.bn1 = norm_func(out_channels)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         for l in [self.conv1,]:
             nn.init.kaiming_uniform_(l.weight, a=1)
@@ -362,7 +369,7 @@ class BaseStem(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = F.relu_(x)
-        x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1)
+        x = self.maxpool(x)
         return x
 
 
@@ -443,6 +450,7 @@ _STAGE_SPECS = Registry({
     "R-50-C5": ResNet50StagesTo5,
     "R-101-C4": ResNet101StagesTo4,
     "R-101-C5": ResNet101StagesTo5,
+    "R-152-C4": ResNet152StagesTo4,
     "R-50-FPN": ResNet50FPNStagesTo5,
     "R-50-FPN-RETINANET": ResNet50FPNStagesTo5,
     "R-101-FPN": ResNet101FPNStagesTo5,

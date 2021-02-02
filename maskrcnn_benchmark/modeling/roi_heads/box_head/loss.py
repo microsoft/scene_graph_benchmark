@@ -1,10 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 import torch
 from torch.nn import functional as F
 
 from maskrcnn_benchmark.layers import smooth_l1_loss
 from maskrcnn_benchmark.modeling.box_coder import BoxCoder
 from maskrcnn_benchmark.modeling.matcher import Matcher
+from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
 from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
     BalancedPositiveNegativeSampler
@@ -41,11 +43,19 @@ class FastRCNNLossComputation(object):
         matched_idxs = self.proposal_matcher(match_quality_matrix)
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
-        # get the targets corresponding GT for each proposal
-        # NB: need to clamp the indices because we can have a single
-        # GT in the image, and matched_idxs can be -2, which goes
-        # out of bounds
-        matched_targets = target[matched_idxs.clamp(min=0)]
+        if len(target) == 0:
+            # take care of no positive labels during training
+            dummy_box = torch.zeros((len(matched_idxs), 4), 
+                    dtype=torch.float32, device=matched_idxs.device)
+            matched_targets = BoxList(dummy_box, target.size, target.mode)
+            matched_targets.add_field("labels", torch.zeros(len(matched_idxs),
+                    dtype=torch.float32, device=matched_idxs.device))
+        else:
+            # get the targets corresponding GT for each proposal
+            # NB: need to clamp the indices because we can have a single
+            # GT in the image, and matched_idxs can be -2, which goes
+            # out of bounds
+            matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
         return matched_targets
 
@@ -113,6 +123,30 @@ class FastRCNNLossComputation(object):
             proposals[img_idx] = proposals_per_image
 
         self._proposals = proposals
+        return proposals
+
+    def prepare_labels(self, proposals, targets):
+        """
+        This method prepares the ground-truth labels for each bounding box, and return
+        the sampled proposals.
+        Note: this function keeps a state.
+        Arguments:
+            proposals (list[BoxList])
+            targets (list[BoxList])
+        """
+        # use targets to assign gt labels to each proposal.
+        labels, regression_targets = self.prepare_targets(proposals, targets)
+
+        proposals = list(proposals)
+        # add corresponding label and regression_targets information to the bounding boxes
+        for labels_per_image, regression_targets_per_image, proposals_per_image in zip(
+            labels, regression_targets, proposals):
+            # clamp_(min=0) changes the ignored proposals and classes to 0 (background)
+            proposals_per_image.add_field("gt_labels", labels_per_image.clamp_(min=0))
+            proposals_per_image.add_field(
+                "regression_targets", regression_targets_per_image
+            )
+
         return proposals
 
     def __call__(self, class_logits, box_regression):

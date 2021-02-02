@@ -1,3 +1,4 @@
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
 """
 This file contains primitives for multi-gpu communication.
 This is useful when doing distributed training.
@@ -44,6 +45,59 @@ def synchronize():
         return
     dist.barrier()
 
+
+def gather_on_master(data):
+    """Same as all_gather, but gathers data on master process only, using CPU.
+    Thus, this does not work with NCCL backend unless they add CPU support.
+
+    The memory consumption of this function is ~ 3x of data size. While in
+    principal, it should be ~2x, it's not easy to force Python to release
+    memory immediately and thus, peak memory usage could be up to 3x.
+    """
+    world_size = get_world_size()
+    if world_size == 1:
+        return [data]
+
+    # serialized to a Tensor
+    buffer = pickle.dumps(data)
+    # trying to optimize memory, but in fact, it's not guaranteed to be released
+    del data
+    storage = torch.ByteStorage.from_buffer(buffer)
+    del buffer
+    tensor = torch.ByteTensor(storage)
+
+    # obtain Tensor size of each rank
+    local_size = torch.LongTensor([tensor.numel()])
+    size_list = [torch.LongTensor([0]) for _ in range(world_size)]
+    dist.all_gather(size_list, local_size)
+    size_list = [int(size.item()) for size in size_list]
+    max_size = max(size_list)
+
+    if local_size != max_size:
+        padding = torch.ByteTensor(size=(max_size - local_size,))
+        tensor = torch.cat((tensor, padding), dim=0)
+        del padding
+
+    if is_main_process():
+        tensor_list = []
+        for _ in size_list:
+            tensor_list.append(torch.ByteTensor(size=(max_size,)))
+        dist.gather(tensor, gather_list=tensor_list, dst=0)
+        del tensor
+    else:
+        dist.gather(tensor, gather_list=[], dst=0)
+        del tensor
+        return
+
+    data_list = []
+    for tensor in tensor_list:
+        buffer = tensor.cpu().numpy().tobytes()
+        del tensor
+        data_list.append(pickle.loads(buffer))
+        del buffer
+
+    return data_list
+    
 
 def all_gather(data):
     """

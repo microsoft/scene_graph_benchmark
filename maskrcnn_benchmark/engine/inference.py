@@ -1,14 +1,22 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
+import imp
 import logging
 import time
 import os
+import json
+import base64
 
 import torch
 from tqdm import tqdm
 
 from maskrcnn_benchmark.data.datasets.evaluation import evaluate
+from maskrcnn_benchmark.structures.tsv_file_ops import tsv_writer
+from maskrcnn_benchmark.data.datasets.utils.load_files import load_labelmap_file
+from scene_graph_benchmark.scene_parser import SceneParserOutputs
+
 from ..utils.comm import is_main_process, get_world_size
-from ..utils.comm import all_gather
+from ..utils.comm import all_gather, gather_on_master
 from ..utils.comm import synchronize
 from ..utils.timer import Timer, get_time_str
 from .bbox_aug import im_detect_bbox_aug
@@ -19,14 +27,21 @@ def compute_on_dataset(model, data_loader, device, bbox_aug, timer=None):
     results_dict = {}
     cpu_device = torch.device("cpu")
     for _, batch in enumerate(tqdm(data_loader)):
-        images, targets, image_ids = batch
+        images, targets, image_ids, scales = batch[0], batch[1], batch[2], batch[3:]
         with torch.no_grad():
             if timer:
                 timer.tic()
             if bbox_aug:
                 output = im_detect_bbox_aug(model, images, device)
             else:
-                output = model(images.to(device))
+                try:
+                    output = model(images.to(device), targets)
+                except RuntimeError as e:
+                    image_ids_str = [str(img_id) for img_id in image_ids]
+                    print("Runtime error occurred in Image Ids: {}"
+                          .format(','.join(image_ids_str)))
+                    print(e)
+                    continue
             if timer:
                 if not device.type == 'cpu':
                     torch.cuda.synchronize()
@@ -38,8 +53,12 @@ def compute_on_dataset(model, data_loader, device, bbox_aug, timer=None):
     return results_dict
 
 
-def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
-    all_predictions = all_gather(predictions_per_gpu)
+def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu, gather_on_cpu=False):
+    if gather_on_cpu:
+        all_predictions = gather_on_master(predictions_per_gpu)
+    else:
+        all_predictions = all_gather(predictions_per_gpu)
+
     if not is_main_process():
         return
     # merge the list of dicts
@@ -55,13 +74,140 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
             "a contiguous set. Some images might be missing from the evaluation"
         )
 
-    # convert to a list
-    predictions = [predictions[i] for i in image_ids]
     return predictions
+
+
+def convert_predictions_to_tsv(predictions, dataset, output_folder,
+                               data_subset, labelmap_file=None,
+                               relation_on=False,
+                               output_tsv_name='predictions.tsv'):
+    # convert the prediction results to tsv format and save
+    # for easier visualization and post-processing.
+    if 'class' in data_subset:
+        if os.path.isfile(labelmap_file):
+            labelmap = load_labelmap_file(labelmap_file)
+        elif hasattr(dataset, 'ind_to_class'):
+            labelmap = dataset.ind_to_class
+        else:
+            raise ValueError("object labelmap is required, but was not provided")
+    if 'attr_labels' in data_subset:
+        if os.path.isfile(labelmap_file):
+            attr_labelmap = json.load(open(labelmap_file, 'r'))['attribute_to_idx']
+            attr_labelmap['__no_attribute__'] = 0
+            attr_labelmap = {v:k for k, v in attr_labelmap.items()}
+        elif hasattr(dataset, 'ind_to_attribute'):
+            attr_labelmap = dataset.ind_to_attribute
+        else:
+            raise ValueError("attribute labelmap is required, but was not provided")
+    if 'relations' in data_subset:
+        if os.path.isfile(labelmap_file):
+            relation_labelmap = json.load(open(labelmap_file, 'r'))['predicate_to_idx']
+            relation_labelmap['__no_relation__'] = 0
+        elif hasattr(dataset, 'ind_to_relation'):
+            relation_labelmap = dataset.ind_to_relation
+        else:
+            raise ValueError("relation labelmap is required, but was not provided")
+    
+    def gen_rows():
+        for idx, prediction in sorted(predictions.items()):
+            image_key = dataset.get_img_key(idx)
+            image_width = dataset.get_img_info(idx)['width']
+            image_height = dataset.get_img_info(idx)['height']
+
+            if isinstance(prediction, SceneParserOutputs):
+                prediction_pred = prediction.prediction_pairs
+                prediction = prediction.predictions
+
+                relations = prediction_pred.get_field("idx_pairs").numpy()
+                relation_scores = prediction_pred.get_field("scores").numpy()
+                predicates = prediction_pred.get_field("labels").numpy()
+                if 'relation_scores_all' in data_subset:
+                    relation_scores_all = prediction_pred.get_field("scores_all").numpy()
+
+            prediction = prediction.resize((image_width, image_height))
+            boxes = prediction.bbox.tolist()
+
+            if 'conf' in data_subset:
+                scores = prediction.get_field('scores').tolist()
+            if 'class' in data_subset:
+                labels = prediction.get_field('labels').tolist()
+            if 'feature' in data_subset:
+                features = prediction.get_field('box_features').numpy()
+            if 'scores_all' in data_subset:
+                scores_all = prediction.get_field('scores_all').numpy()
+            if 'boxes_all' in data_subset:
+                boxes_all = prediction.get_field('boxes_all').numpy()
+            if "attr_labels" in data_subset:
+                attr_labels = prediction.get_field("attr_labels").tolist()
+            if "attr_scores" in data_subset:
+                attr_scores = prediction.get_field("attr_scores").tolist()
+            if "attr_scores_all" in data_subset:
+                attr_scores_all = prediction.get_field("attr_scores_all").numpy()
+            if 'relations' in data_subset:
+                relations = relations.tolist()
+                predicates = [relation_labelmap[rel+1] for rel in predicates.tolist()]
+            if 'relation_scores' in data_subset:
+                relation_scores = relation_scores.tolist()
+            if 'relation_scores_all' in data_subset:
+                relation_scores_all = [base64.b64encode(relation_scores_all[i]).decode('utf-8') for i in range(len(relations))]
+
+            objects = []
+            for i in range(len(boxes)):
+                cur_d = {}
+                for name in data_subset:
+                    if name == 'rect':
+                        cur_d['rect'] = boxes[i]
+                        cur_d['bbox_id'] = i
+                    if name == 'class':
+                        cur_d['class'] = labelmap[labels[i]]
+                    if name == 'conf':
+                        cur_d['conf'] = scores[i]
+                    if name == 'feature':
+                        cur_d['feature'] = base64.b64encode(features[i]) \
+                            .decode('utf-8')
+                    if name == 'scores_all':
+                        cur_d['scores_all'] = base64.b64encode(scores_all[i]) \
+                            .decode('utf-8')
+                    if name == 'boxes_all':
+                        cur_d['boxes_all'] = base64.b64encode(boxes_all[i]) \
+                            .decode('utf-8')
+                    if name == 'attr_labels':
+                        cur_d['attributes'] = []
+                        for attr in attr_labels[i]:
+                            cur_d['attributes'].append(attr_labelmap[attr])
+                    if name == 'attr_scores':
+                        cur_d['attr_scores'] = []
+                        for attr_score in attr_scores[i]:
+                            cur_d['attr_scores'].append(attr_score)
+                    if name == 'attr_scores_all':
+                        cur_d['attr_scores_all'] = base64.b64encode(attr_scores_all[i]) \
+                            .decode('utf-8')
+                objects.append(cur_d)
+            
+            triplets = None
+            if relation_on:
+                triplets = []
+                for i in range(len(relations)):
+                    cur_d = {}
+                    for name in data_subset:
+                        if name == 'relations':
+                            cur_d['subj_id'] = relations[i][0]
+                            cur_d['obj_id'] = relations[i][1]
+                            cur_d['class'] = predicates[i]
+                        if name == 'relation_scores':
+                            cur_d['conf'] = relation_scores[i]
+                        if name == 'relation_scores_all':
+                            cur_d['scores_all'] = relation_scores_all[i]
+                    triplets.append(cur_d)
+            
+            yield image_key, json.dumps({'objects': objects, 'relations':triplets})
+    
+    tsv_writer(gen_rows(), os.path.join(output_folder, output_tsv_name))
 
 
 def inference(
         model,
+        cfg,
         data_loader,
         dataset_name,
         iou_types=("bbox",),
@@ -71,6 +217,10 @@ def inference(
         expected_results=(),
         expected_results_sigma_tol=4,
         output_folder=None,
+        eval_attributes=False,
+        save_predictions=False,
+        skip_performance_eval=False,
+        labelmap_file='',
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)
@@ -100,18 +250,35 @@ def inference(
         )
     )
 
-    predictions = _accumulate_predictions_from_multiple_gpus(predictions)
+    predictions = _accumulate_predictions_from_multiple_gpus(predictions, cfg.TEST.GATHER_ON_CPU)
+
     if not is_main_process():
         return
 
-    if output_folder:
+    if output_folder and save_predictions:
         torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
+    
+    if output_folder and cfg.TEST.SAVE_RESULTS_TO_TSV:
+        logger.info("Convert prediction results to tsv format and save.")
+        output_tsv_name = 'predictions_forcebox.tsv' if eval_attributes else 'predictions.tsv'
+        convert_predictions_to_tsv(
+            predictions, dataset, output_folder,
+            data_subset=cfg.TEST.TSV_SAVE_SUBSET,
+            labelmap_file=labelmap_file,
+            output_tsv_name=output_tsv_name,
+            relation_on=cfg.MODEL.RELATION_ON,
+        )
+    
+    if skip_performance_eval:
+        logger.info("Skip performance evaluation and return.")
+        return
 
     extra_args = dict(
         box_only=box_only,
         iou_types=iou_types,
         expected_results=expected_results,
         expected_results_sigma_tol=expected_results_sigma_tol,
+        save_predictions=save_predictions
     )
 
     return evaluate(dataset=dataset,

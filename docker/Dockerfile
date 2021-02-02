@@ -1,4 +1,4 @@
-ARG CUDA="9.0"
+ARG CUDA="10.1"
 ARG CUDNN="7"
 
 FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu16.04
@@ -18,28 +18,27 @@ RUN curl -so /miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest
 
 ENV PATH=/miniconda/bin:$PATH
 
-# Create a Python 3.6 environment
+# Create a Python 3.7 environment
 RUN /miniconda/bin/conda install -y conda-build \
- && /miniconda/bin/conda create -y --name py36 python=3.6.7 \
+ && /miniconda/bin/conda create -y --name py37 python=3.7 \
  && /miniconda/bin/conda clean -ya
 
-ENV CONDA_DEFAULT_ENV=py36
+ENV CONDA_DEFAULT_ENV=py37
 ENV CONDA_PREFIX=/miniconda/envs/$CONDA_DEFAULT_ENV
 ENV PATH=$CONDA_PREFIX/bin:$PATH
 ENV CONDA_AUTO_UPDATE_CONDA=false
 
 RUN conda install -y ipython
-RUN pip install requests ninja yacs cython matplotlib opencv-python tqdm
+RUN pip install requests ninja yacs numpy cython matplotlib opencv-python tqdm \
+ progressbar protobuf tensorboardx tensorboard tensorflow nltk pymongo pandas joblib \
+ sklearn boto3 scikit-image
+RUN pip install azureml-defaults>=1.0.45 azureml.core inference-schema
+RUN pip --no-cache-dir install --force-reinstall -I pyyaml
 
-# Install PyTorch 1.0 Nightly
+# Install latest PyTorch 1.4
 ARG CUDA
-RUN conda install pytorch-nightly cudatoolkit=${CUDA} -c pytorch \
+RUN conda install pytorch~=1.4.0 torchvision cudatoolkit=${CUDA} -c pytorch \
  && conda clean -ya
-
-# Install TorchVision master
-RUN git clone https://github.com/pytorch/vision.git \
- && cd vision \
- && python setup.py install
 
 # install pycocotools
 RUN git clone https://github.com/cocodataset/cocoapi.git \
@@ -54,8 +53,9 @@ RUN git clone https://github.com/NVIDIA/apex.git \
 # install PyTorch Detection
 ARG FORCE_CUDA="1"
 ENV FORCE_CUDA=${FORCE_CUDA}
-RUN git clone https://github.com/facebookresearch/maskrcnn-benchmark.git \
- && cd maskrcnn-benchmark \
+
+RUN git clone https://github.com/hanxiaotian/scene_graph_benchmark.git \
+ && cd scene_graph_benchmark \
  && python setup.py build develop
 
-WORKDIR /maskrcnn-benchmark
+WORKDIR /scene_graph_benchmark
