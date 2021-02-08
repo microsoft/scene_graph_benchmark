@@ -123,6 +123,8 @@ def convert_predictions_to_tsv(predictions, dataset, output_folder,
                 predicates = prediction_pred.get_field("labels").numpy()
                 if 'relation_scores_all' in data_subset:
                     relation_scores_all = prediction_pred.get_field("scores_all").numpy()
+                if 'relation_feature' in data_subset:
+                    relation_features = prediction_pred.get_field("pred_features").numpy()
 
             prediction = prediction.resize((image_width, image_height))
             boxes = prediction.bbox.tolist()
@@ -198,6 +200,8 @@ def convert_predictions_to_tsv(predictions, dataset, output_folder,
                             cur_d['conf'] = relation_scores[i]
                         if name == 'relation_scores_all':
                             cur_d['scores_all'] = relation_scores_all[i]
+                        if name == 'relation_feature':
+                            cur_d['relation_feature'] = base64.b64encode(relation_features[i]).decode('utf-8')
                     triplets.append(cur_d)
             
             yield image_key, json.dumps({'objects': objects, 'relations':triplets})
