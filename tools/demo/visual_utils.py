@@ -126,3 +126,51 @@ def load_colormap_file(colormap_file):
             label2color[item[0]] = [float(_) for _ in item[1].split(' ')]
     return label2color
 
+def draw_rel(im, all_rel_subj_center, all_rel_obj_center, all_rel_label, probs=None, color=None, 
+        draw_label=True):
+    font, font_scale, font_thickness = get_font_info(im.shape[:2])
+
+    dist_label = set(all_rel_label)
+    if color is None:
+        from . import qd_const
+        color = qd_const.label_to_color
+        for l in dist_label:
+            if l in color:
+                continue
+            if len(qd_const.gold_colors) > 0:
+                color[l] = qd_const.gold_colors.pop()
+    for i, l in enumerate(dist_label):
+        if l in color:
+            continue
+        color[l] = (random() * 255., random() * 255, random() * 255)
+    
+    for i in range(len(all_rel_label)):
+        subj_center = all_rel_subj_center[i]
+        obj_center = all_rel_obj_center[i]
+        label = all_rel_label[i]
+        cv2.line(im, (int(subj_center[0]), int(subj_center[1])), 
+                (int(obj_center[0]), int(obj_center[1])), color[label], 
+                thickness=font_thickness)
+        if probs is not None:
+            if draw_label:
+                label_in_image = '{}-{:.2f}'.format(label, probs[i])
+            else:
+                label_in_image = '{:.2f}'.format(probs[i])
+        else:
+            if draw_label:
+                label_in_image = '{}'.format(label)
+
+        def gen_candidate():
+            # above of top left
+            rel_center = [(subj_center[0]+obj_center[0])/2, (subj_center[1]+obj_center[1])/2]
+            yield int(rel_center[0]) + 2, int(rel_center[1]) - 4
+            # below of bottom left
+            yield int(rel_center[0]) + 2, int(rel_center[1]) + text_height + 2
+        if draw_label or probs is not None:
+            (_, text_height), _ = cv2.getTextSize(label_in_image, font,
+                                                  font_scale, font_thickness)
+            for text_left, text_bottom in gen_candidate():
+                if 0 <= text_left < im.shape[1] - 12 and 12 < text_bottom  < im.shape[0]:
+                    put_text(im, label_in_image, (text_left, text_bottom), color[label],
+                            font_scale, font_thickness)
+                    break
