@@ -23,12 +23,13 @@ RelDN | 75.40 | 40.85 | 44.24 | 49.16 | 50.60 | 78.74 | 90.39 | [link]() | [link
 
 model | sgdet@20 | sgdet@50 | sgdet@100 | sgcls@20 | sgcls@50 | sgcls@100 | predcls@20 | predcls@50 | predcls@100 | model | config 
 -----------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:
-IMP | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-IMP-bias | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-MSDN | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-MSDN-bias | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-Neural Motif | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-Neural Motif-bias | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
-GRCNN | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]() 
-GRCNN-bias | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]() 
-RelDN | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | 10.5 | 13.8 | 16.1 | [link]() | [link]()
+IMP | 19.8 | 27.5 | 33.0 |  |  |  |  |  |  | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_imp_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_false_imp_feature_update_step_2/model_final.pth) | [link]()
+IMP-bias | 21.7 | 29.3 | 34.5 |  |  |  |  |  |  | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_imp_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_true/model_0120000.pth) | [link]()
+MSDN | 20.6 | 28.1 | 33.3 |  | |  |  |  |  | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_msdn_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_false_msdn_feature_update_step_2/model_0100000.pth) | [link]()
+MSDN-bias | 22.4 | 30.0 | 35.3 |  |  |  | |  | | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_msdn_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_true/model_0060000.pth) | [link]()
+Neural Motif |  |  |  |  |  |  |  |  |  | [link]() | [link]()
+Neural Motif-bias |  |  | |  | |  |  |  | | [link]() | [link]()
+GRCNN | 20.5 | 27.4 | 31.9 |  |  |  |  |  |  | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_grcnn_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_relpn_true_use_bias_false_grcnn_feature_update_step_2_grcnn_score_update_step_2/model_final.pth) | [link]() 
+GRCNN-bias | 22.9 | 30.1 | 34.8 |  |  |  |  |  |  | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_grcnn_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_relpn_true_use_bias_true_grcnn_feature_update_step_2_grcnn_score_update_step_2/model_0060000.pth) | [link]() 
+RelDN | 24.0 | 32.4 | 37.8 | - | - | - | - | - | - | [link](https://penzhanwu2.blob.core.windows.net/phillytools/vg_jwy/R50FPN_vrd_no_pre_computedcontrastive_loss.use_flag_true_seperate_so_feature_extractor_true_use_bias_true/model_final.pth) | [link]()
+
