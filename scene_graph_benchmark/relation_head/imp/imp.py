@@ -21,6 +21,7 @@ class IMP(nn.Module):
         self.cfg = cfg
         self.dim = 512
         self.update_step = cfg.MODEL.ROI_RELATION_HEAD.IMP_FEATURE_UPDATE_STEP
+        self.use_online_obj_labels = cfg.MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         # self.obj_feature_extractor = make_roi_relation_box_feature_extractor(cfg, in_channels)
         self.pred_feature_extractor = make_roi_relation_feature_extractor(cfg, in_channels)
@@ -114,10 +115,10 @@ class IMP(nn.Module):
         obj_class_logits = self.obj_predictor(hx_obj[-1].unsqueeze(2).unsqueeze(3))
         pred_class_logits = self.pred_predictor(hx_edge[-1].unsqueeze(2).unsqueeze(3))
 
-        if obj_class_logits is None:
-            obj_class_labels = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
-        else:
+        if self.use_online_obj_labels and obj_class_logits is not None:
             obj_class_labels = obj_class_logits[:, 1:].max(1)[1] + 1
+        else:
+            obj_class_labels = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
 
         return (hx_obj[-1], hx_edge[-1]), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds
 

@@ -158,7 +158,15 @@ class PostProcessor(nn.Module):
             boxlist_empty.add_field(
                 "box_features",
                 torch.full((0,), -1, dtype=torch.float32, device=device)
-            )
+                )
+            boxlist_empty.add_field(
+                "scores_all", 
+                torch.full((0,), -1, dtype=torch.float32, device=device)
+                )
+            boxlist_empty.add_field(
+                "boxes_all", 
+                torch.full((0,), -1, dtype=torch.float32, device=device)
+                )
         return boxlist_empty
 
     def filter_results(self, boxlist, num_classes, feature=None):
@@ -184,9 +192,15 @@ class PostProcessor(nn.Module):
                 boxes_j = boxes[inds, j * 4 : (j + 1) * 4]
                 boxlist_for_class = BoxList(boxes_j, boxlist.size, mode="xyxy")
                 boxlist_for_class.add_field("scores", scores_j)
+                
                 if self.output_feature:
                     feature_j = feature[inds]
                     boxlist_for_class.add_field("box_features", feature_j)
+                    
+                    scores_all = scores[inds]
+                    boxlist_for_class.add_field("scores_all", scores_all)
+                    boxlist_for_class.add_field("boxes_all",
+                                                boxes[inds].view(-1, num_classes, 4))
 
                 boxlist_for_class = boxlist_nms(
                     boxlist_for_class, self.nms
@@ -258,6 +272,11 @@ class PostProcessor(nn.Module):
         if self.output_feature:
             features_pre = feature[inds_pre]
             result.add_field("box_features", features_pre)
+
+            scores_all = scores[inds_pre]
+            boxes_all = boxes[inds_pre]
+            result.add_field("scores_all", scores_all)
+            result.add_field("boxes_all", boxes_all.view(-1, num_classes, 4))
 
         vs, idx = torch.sort(scores_pre, dim=0, descending=True)
         keep_boxes = torch.nonzero(scores_pre >= self.score_thresh, as_tuple=True)[0]

@@ -25,6 +25,7 @@ class GRCNN(nn.Module):
         super(GRCNN, self).__init__()
         self.cfg = cfg
         self.dim = 1024
+        self.use_online_obj_labels = cfg.MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS
         self.feat_update_step = cfg.MODEL.ROI_RELATION_HEAD.GRCNN_FEATURE_UPDATE_STEP
         self.score_update_step = cfg.MODEL.ROI_RELATION_HEAD.GRCNN_SCORE_UPDATE_STEP
         num_classes_obj = cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES
@@ -145,7 +146,7 @@ class GRCNN(nn.Module):
             source_obj = self.gcn_collect_score(obj_scores[t], obj_scores[t],
                                                 obj_obj_map, 4)
 
-            # essage from predicate
+            # message from predicate
             source_rel_sub = self.gcn_collect_score(obj_scores[t],
                                                     pred_scores[t],
                                                     subj_pred_map, 0)
@@ -170,14 +171,12 @@ class GRCNN(nn.Module):
         obj_class_logits = obj_scores[-1]
         pred_class_logits = pred_scores[-1]
 
-        if obj_class_logits is None:
-            obj_class_labels = torch.cat(
-                [proposal.get_field("labels") for proposal in proposals], 0)
-        else:
+        if self.use_online_obj_labels and obj_class_logits is not None:
             obj_class_labels = obj_class_logits[:, 1:].max(1)[1] + 1
+        else:
+            obj_class_labels = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
 
-        return (
-                   x_pred), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds
+        return (x_pred), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds
 
 
 def build_grcnn_model(cfg, in_channels):

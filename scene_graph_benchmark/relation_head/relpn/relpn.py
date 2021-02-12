@@ -45,9 +45,9 @@ class RelPN(nn.Module):
                 match_j = match_quality_matrix[j].view(1, -1)
                 match_ij = ((match_i + match_j) / 2)
                 # rmeove duplicate index
-                non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero().view(-1).to(match_ij.device)
                 match_ij = match_ij.view(-1) # [::match_quality_matrix.shape[1]] = 0
-                match_ij = match_ij[non_duplicate_idx]
+                # non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero().view(-1).to(match_ij.device)
+                # match_ij = match_ij[non_duplicate_idx]
                 temp.append(match_ij)
                 boxi = target.bbox[i]; boxj = target.bbox[j]
                 box_pair = torch.cat((boxi, boxj), 0)
@@ -68,9 +68,10 @@ class RelPN(nn.Module):
         idx_obj = torch.arange(box_obj.shape[0]).view(1, -1, 1).repeat(box_subj.shape[0], 1, 1).to(proposal.bbox.device)
         proposal_idx_pairs = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
-        non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero()
-        proposal_box_pairs = proposal_box_pairs[non_duplicate_idx.view(-1)]
-        proposal_idx_pairs = proposal_idx_pairs[non_duplicate_idx.view(-1)]
+        # non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero()
+        # proposal_box_pairs = proposal_box_pairs[non_duplicate_idx.view(-1)]
+        # proposal_idx_pairs = proposal_idx_pairs[non_duplicate_idx.view(-1)]
+
         proposal_pairs = BoxPairList(proposal_box_pairs, proposal.size, proposal.mode)
         proposal_pairs.add_field("idx_pairs", proposal_idx_pairs)
 
@@ -149,30 +150,14 @@ class RelPN(nn.Module):
             obj_logits = proposals_per_image.get_field('scores_all')
             obj_bboxes = proposals_per_image.bbox
             relness = self.relationshipness(obj_logits, obj_bboxes, proposals_per_image.size)
-            nondiag = (1 - torch.eye(obj_logits.shape[0]).to(relness.device)).view(-1)
-            relness = relness.view(-1)[nondiag.nonzero()]
+            
             relness_sorted, order = torch.sort(relness.view(-1), descending=True)
+
             img_sampled_inds = order[:self.cfg.MODEL.ROI_RELATION_HEAD.BATCH_SIZE_PER_IMAGE].view(-1)
             proposal_pairs_per_image = proposal_pairs[img_idx][img_sampled_inds]
             proposal_pairs[img_idx] = proposal_pairs_per_image
 
-            # import pdb; pdb.set_trace()
-            # img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
-            # relness = relness[img_sampled_inds]
-            # pos_labels = torch.ones(len(pos_inds_img.nonzero()))
-            # neg_labels = torch.zeros(len(neg_inds_img.nonzero()))
-            # rellabels = torch.cat((pos_labels, neg_labels), 0).view(-1, 1)
-            # losses += F.binary_cross_entropy(relness, rellabels.to(relness.device))
             losses += F.binary_cross_entropy(relness, (labels[img_idx] > 0).view(-1, 1).float())
-
-        # distributed sampled proposals, that were obtained on all feature maps
-        # concatenated via the fg_bg_sampler, into individual feature map levels
-        # for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
-        #     zip(sampled_pos_inds, sampled_neg_inds)
-        # ):
-        #     img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
-        #     proposal_pairs_per_image = proposal_pairs[img_idx][img_sampled_inds]
-        #     proposal_pairs[img_idx] = proposal_pairs_per_image
 
         self._proposal_pairs = proposal_pairs
 
@@ -227,18 +212,24 @@ class RelPN(nn.Module):
             obj_logits = proposals_per_image.get_field('scores_all')
             obj_bboxes = proposals_per_image.bbox
             relness = self.relationshipness(obj_logits, obj_bboxes, proposals_per_image.size)
-            nondiag = (1 - torch.eye(obj_logits.shape[0]).to(relness.device)).view(-1)
-            relness = relness.view(-1)[nondiag.nonzero()]
+            keep_idx = (1 - torch.eye(obj_logits.shape[0]).to(relness.device)).view(-1).nonzero().view(-1)
+            if self.cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
+                ious = boxlist_iou(proposals_per_image, proposals_per_image).view(-1)
+                ious = ious[keep_idx]
+                keep_idx = keep_idx[(ious > 0).nonzero().view(-1)]
+            relness = relness.view(-1)[keep_idx]
             relness_sorted, order = torch.sort(relness.view(-1), descending=True)
-            img_sampled_inds = order[:self.cfg.MODEL.ROI_RELATION_HEAD.BATCH_SIZE_PER_IMAGE].view(-1)
-            relness = relness_sorted[:self.cfg.MODEL.ROI_RELATION_HEAD.BATCH_SIZE_PER_IMAGE].view(-1)
+
+            img_sampled_inds = order[:self.cfg.MODEL.ROI_RELATION_HEAD.POST_RELPN_PREPOSALS].view(-1)
+            relness = relness_sorted[:self.cfg.MODEL.ROI_RELATION_HEAD.POST_RELPN_PREPOSALS].view(-1)
+
             proposal_pairs_per_image = proposal_pairs[img_idx][img_sampled_inds]
             proposal_pairs[img_idx] = proposal_pairs_per_image
             relnesses.append(relness)
 
         self._proposal_pairs = proposal_pairs
 
-        return proposal_pairs, relnesses
+        return proposal_pairs
 
     def forward(self, proposals, targets=None):
         """
@@ -255,7 +246,7 @@ class RelPN(nn.Module):
         else:
             return self._relpnsample_test(proposals)
 
-    def pred_classification_loss(self, class_logits):
+    def pred_classification_loss(self, class_logits, freq_prior=None):
         """
         Computes the loss for Faster R-CNN.
         This requires that the subsample method has been called beforehand.
@@ -273,7 +264,6 @@ class RelPN(nn.Module):
             raise RuntimeError("subsample needs to be called before")
 
         proposals = self._proposal_pairs
-
         labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
 
         rel_fg_cnt = len(labels.nonzero())
@@ -281,7 +271,6 @@ class RelPN(nn.Module):
         ce_weights = labels.new(class_logits.size(1)).fill_(1).float()
         ce_weights[0] = float(rel_fg_cnt) / (rel_bg_cnt + 1e-5)
         classification_loss = F.cross_entropy(class_logits, labels, weight=ce_weights)
-
         return classification_loss
 
 

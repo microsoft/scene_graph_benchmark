@@ -21,6 +21,7 @@ class MSDN(MSDN_BASE):
         self.cfg = cfg
         self.dim = dim
         self.update_step = cfg.MODEL.ROI_RELATION_HEAD.MSDN_FEATURE_UPDATE_STEP
+        self.use_online_obj_labels = cfg.MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS
         super(MSDN, self).__init__(dim, dropout, gate_width, use_region=True,
                                    use_kernel_function=use_kernel_function,
                                    update_step=self.update_step)
@@ -96,10 +97,10 @@ class MSDN(MSDN_BASE):
         obj_class_logits = self.obj_predictor(x_obj[-1].unsqueeze(2).unsqueeze(3))
         pred_class_logits = self.pred_predictor(x_pred[-1].unsqueeze(2).unsqueeze(3))
 
-        if obj_class_logits is None:
-            obj_class_labels = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
-        else:
+        if self.use_online_obj_labels and obj_class_logits is not None:
             obj_class_labels = obj_class_logits[:, 1:].max(1)[1] + 1
+        else:
+            obj_class_labels = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
 
         return (x_obj[-1], x_pred[-1]), obj_class_logits, pred_class_logits, obj_class_labels, rel_inds
 
