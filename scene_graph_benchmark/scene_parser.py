@@ -213,6 +213,24 @@ class SceneParser(GeneralizedRCNN):
             predictions = targets
             for pred in predictions:
                 pred.add_field('scores', torch.tensor([1.0]*len(pred)).to(self.device))
+                if self.cfg.TEST.OUTPUT_FEATURE:
+                    gt_labels = pred.get_field('labels')
+                    gt_pseudo_scores_all = torch.zeros(len(pred), self.cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES).to(gt_labels.device)
+                    gt_pseudo_scores_all.scatter_(1, gt_labels.unsqueeze(0).view(-1, 1), 1)
+                    pred.add_field('scores_all', gt_pseudo_scores_all)
+                    gt_boxes = pred.bbox
+                    gt_pseudo_boxes_all = gt_boxes.unsqueeze(1).repeat(1, self.cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES, 1)
+                    pred.add_field('boxes_all', gt_pseudo_boxes_all)
+            if self.cfg.TEST.OUTPUT_FEATURE:
+                gt_features = self.roi_heads.box.feature_extractor(features, predictions)
+                if gt_features.ndimension() == 4:
+                    gt_features = torch.nn.functional.adaptive_avg_pool2d(gt_features, 1)
+                    gt_features = gt_features.view(gt_features.size(0), -1)
+                gt_boxes_per_image = [len(box) for box in predictions]
+                assert sum(gt_boxes_per_image)==len(gt_features), "gt_boxes_per_image and len(gt_features) do not match!"
+                gt_features = gt_features.split(gt_boxes_per_image, dim=0)
+                for pred, gt_feature in zip(predictions, gt_features):
+                    pred.add_field('box_features', gt_feature)
 
         if not self.cfg.MODEL.ROI_RELATION_HEAD.SHARE_CONV_BACKBONE:
             features = self.rel_backbone(images.tensors)

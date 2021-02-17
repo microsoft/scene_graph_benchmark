@@ -86,6 +86,7 @@ def convert_predictions_to_tsv(predictions, dataset, output_folder,
     if 'class' in data_subset:
         if os.path.isfile(labelmap_file):
             labelmap = load_labelmap_file(labelmap_file)
+            labelmap = {labelmap[key] + 1: key for key in labelmap}
         elif hasattr(dataset, 'ind_to_class'):
             labelmap = dataset.ind_to_class
         else:
@@ -103,6 +104,7 @@ def convert_predictions_to_tsv(predictions, dataset, output_folder,
         if os.path.isfile(labelmap_file):
             relation_labelmap = json.load(open(labelmap_file, 'r'))['predicate_to_idx']
             relation_labelmap['__no_relation__'] = 0
+            relation_labelmap = {relation_labelmap[key]: key for key in relation_labelmap}
         elif hasattr(dataset, 'ind_to_relation'):
             relation_labelmap = dataset.ind_to_relation
         else:

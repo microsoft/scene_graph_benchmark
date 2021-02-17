@@ -119,7 +119,7 @@ class PostProcessor(nn.Module):
                                 "retrying filter_results with score thresh"
                                 " = {}").format(new_boxlist.bbox.shape[0],
                                                 self.score_thresh))
-                        new_boxlist = self.filter_results(boxlist, num_classes)
+                        new_boxlist = self.filter_method(boxlist, num_classes, feature)
                         decrease_num += 1
                     boxlist = new_boxlist
                     self.score_thresh = initial_conf_thresh
