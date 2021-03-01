@@ -26,6 +26,7 @@ class NeuralMotif(nn.Module):
         assert config.MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR is False
 
         self.hidden_dim = config.MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.HIDDEN_DIM
+        self.use_online_obj_labels = config.MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS
 
         # feature extractor only for ResNet50Conv5ROIFeatureExtractor
         # TODO: extend to other feature extractos, like FPN2MLPRelationFeatureExtractor
@@ -171,6 +172,9 @@ class NeuralMotif(nn.Module):
 
         # predicate prediction
         class_logits = self.predictor(edge_prod_rep)
+
+        if not self.use_online_obj_labels:
+            obj_preds = torch.cat([proposal.get_field("labels") for proposal in proposals], 0)
 
         return edge_prod_rep, obj_prob_dists, class_logits, obj_preds, rel_inds
 

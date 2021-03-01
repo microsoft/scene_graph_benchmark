@@ -40,6 +40,9 @@ python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.ya
 python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.yaml --img_file ../maskrcnn-benchmark-1/datasets1/imgs/woman_fish.jpg --save_file output/woman_fish_x152c4.attr.jpg --visualize_attr MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION False
 
 python tools/demo/demo_image.py --config_file sgg_configs/vrd/R152FPN_vrd_reldn.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_output.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False
+
+# neural motif model demo
+python tools/demo/demo_image.py --config_file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_vgnm.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False DATASETS.LABELMAP_FILE "visualgenome/VG-SGG-dicts-danfeiX-clipped.json" DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2
 ```
 
 ## Perform training
@@ -83,10 +86,15 @@ python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/train_sg_net.py
 
 
 ## Evaluation
-You can test your model directly on single or multiple gpus. Here is an example on 4 GPUS:
+You can test your model directly on single or multiple gpus. 
+To evaluate relations, one needs to output "relation_scores_all" in the TSV_SAVE_SUBSET.
+Here is an example on 4 GPUS:
 ```bash
 export NGPUS=8
 python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vrd/R152FPN_vrd_reldn.yaml
+
+# vg neural motif evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --ckpt models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/model_final.pth DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 OUTPUT_DIR models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2 MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS False
 ```
 
 ## Abstractions
@@ -165,3 +173,12 @@ note = {Accessed: [Insert date here]}
 maskrcnn-benchmark is released under the MIT license. See [LICENSE](LICENSE) for additional details.
 
 ## Acknowledgement
+
+## Notes when testing
+remove SKIP_UNMATCHED_LAYERS_TRAIN, TEST.OUTPUT_SCORES_ALL
+
+change NEURAL_MOTIF.OBJ_CLASSES_FN from txt to json
+
+To evaluate relations, one needs to output "relation_scores_all" in the TSV_SAVE_SUBSET.
+
+Other repos have three modes: sgdet, sgcls, predcls. We only have two modes: force_relation = T/F. Is there any difference?
