@@ -25,53 +25,52 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
     evaluator = BasicSceneGraphEvaluator.all_modes(multiple_preds=False)
 
     top_Ns = [20, 50, 100]
-    modes = ["sgdet"]
+    mode = "sgdet"
     result_dict = {}
     danfei_metric = {}
     rowan_metric = {}
 
-    for mode in modes:
-        result_dict[mode + '_recall'] = {20: [], 50: [], 100: []}
-        for image_key, sg_prediction in predict_dicts.items():
-            gt_boxlist = gt_dicts[image_key]
+    result_dict[mode + '_recall'] = {20: [], 50: [], 100: []}
+    for image_key, sg_prediction in predict_dicts.items():
+        gt_boxlist = gt_dicts[image_key]
 
-            gt_entry = {
-                'gt_classes': gt_boxlist.get_field("labels").numpy(),
-                'gt_relations': gt_boxlist.get_field("relation_labels").numpy().astype(int),
-                'gt_boxes': gt_boxlist.bbox.numpy(),
-            }
+        gt_entry = {
+            'gt_classes': gt_boxlist.get_field("labels").numpy(),
+            'gt_relations': gt_boxlist.get_field("relation_labels").numpy().astype(int),
+            'gt_boxes': gt_boxlist.bbox.numpy(),
+        }
 
-            obj_scores = sg_prediction['bbox_scores'].numpy()
-            all_rels = sg_prediction['relation_pairs'].numpy()
-            fp_pred = sg_prediction['relation_scores_all'].numpy()
-            # multiplier = np.ones((obj_scores.shape[0], obj_scores.shape[0]))
-            # np.fill_diagonal(multiplier, 0)
-            # fp_pred = fp_pred * multiplier.reshape(obj_scores.shape[0] * (obj_scores.shape[0] - 1), 1)
-            scores = np.column_stack((
-                obj_scores[all_rels[:, 0]],
-                obj_scores[all_rels[:, 1]],
-                fp_pred[:, 1:].max(1)
-            )).prod(1)
-            sorted_inds = np.argsort(-scores)
-            sorted_inds = sorted_inds[scores[sorted_inds] > 0]  # [:100]
+        obj_scores = sg_prediction['bbox_scores'].numpy()
+        all_rels = sg_prediction['relation_pairs'].numpy()
+        fp_pred = sg_prediction['relation_scores_all'].numpy()
+        # multiplier = np.ones((obj_scores.shape[0], obj_scores.shape[0]))
+        # np.fill_diagonal(multiplier, 0)
+        # fp_pred = fp_pred * multiplier.reshape(obj_scores.shape[0] * (obj_scores.shape[0] - 1), 1)
+        scores = np.column_stack((
+            obj_scores[all_rels[:, 0]],
+            obj_scores[all_rels[:, 1]],
+            fp_pred[:, 1:].max(1)
+        )).prod(1)
+        sorted_inds = np.argsort(-scores)
+        sorted_inds = sorted_inds[scores[sorted_inds] > 0]  # [:100]
 
-            pred_entry = {
-                'pred_boxes': sg_prediction['bboxes'].numpy(),
-                'pred_classes': sg_prediction['bbox_labels'].numpy(),
-                'obj_scores': sg_prediction['bbox_scores'].numpy(),
-                'pred_rel_inds': all_rels[sorted_inds],
-                'rel_scores': fp_pred[sorted_inds],
-            }
+        pred_entry = {
+            'pred_boxes': sg_prediction['bboxes'].numpy(),
+            'pred_classes': sg_prediction['bbox_labels'].numpy(),
+            'obj_scores': sg_prediction['bbox_scores'].numpy(),
+            'pred_rel_inds': all_rels[sorted_inds],
+            'rel_scores': fp_pred[sorted_inds],
+        }
 
-            evaluator[mode].evaluate_scene_graph_entry(
-                gt_entry,
-                pred_entry,
-            )
+        evaluator[mode].evaluate_scene_graph_entry(
+            gt_entry,
+            pred_entry,
+        )
 
-            evaluate(gt_boxlist.get_field("labels"), gt_boxlist.bbox, gt_boxlist.get_field("pred_labels"),
-                     sg_prediction['bboxes'], sg_prediction['bbox_scores'], sg_prediction['bbox_labels'],
-                     sg_prediction['relation_pairs'], sg_prediction['relation_scores_all'],
-                     top_Ns, result_dict, mode)
+        evaluate(gt_boxlist.get_field("labels"), gt_boxlist.bbox, gt_boxlist.get_field("pred_labels"),
+                    sg_prediction['bboxes'], sg_prediction['bbox_scores'], sg_prediction['bbox_labels'],
+                    sg_prediction['relation_pairs'], sg_prediction['relation_scores_all'],
+                    top_Ns, result_dict, mode)
 
         evaluator[mode].print_stats(logger)
         logger.warning('=====================' + mode + '(IMP)' + '=========================')

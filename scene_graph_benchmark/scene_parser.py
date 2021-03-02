@@ -5,6 +5,7 @@ Implements the Scene Parser framework
 import numpy as np
 import torch
 
+from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.image_list import to_image_list
 from maskrcnn_benchmark.modeling.detector.generalized_rcnn import GeneralizedRCNN
 from .relation_head.relation_head import build_roi_relation_head
@@ -50,6 +51,7 @@ class SceneParser(GeneralizedRCNN):
         self.cfg = cfg
         self.device = cfg.MODEL.DEVICE
         self.detector_pre_calculated = self.cfg.MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED
+        self.detector_force_boxes = self.cfg.MODEL.ROI_BOX_HEAD.FORCE_BOXES
 
         feature_dim = self.backbone.out_channels
         if not self.cfg.MODEL.ROI_RELATION_HEAD.SHARE_CONV_BACKBONE:
@@ -202,7 +204,11 @@ class SceneParser(GeneralizedRCNN):
 
             proposals, proposal_losses = self.rpn(images, features, targets)
 
-            x, predictions, detector_losses = self.roi_heads(features, proposals, targets)
+            if self.detector_force_boxes:
+                proposals = [BoxList(target.bbox, target.size, target.mode) for target in targets]
+                x, predictions, detector_losses = self.roi_heads(features, proposals, targets)
+            else:
+                x, predictions, detector_losses = self.roi_heads(features, proposals, targets)
             scene_parser_losses.update(detector_losses)
         else:
             proposal_losses = {}
