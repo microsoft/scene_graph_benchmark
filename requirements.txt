@@ -1,6 +1,0 @@
-ninja
-yacs==0.1.8
-cython
-matplotlib
-tqdm
-cityscapesscripts
