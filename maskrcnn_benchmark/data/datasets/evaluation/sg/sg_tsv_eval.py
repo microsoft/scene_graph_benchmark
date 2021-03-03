@@ -72,17 +72,17 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
                     sg_prediction['relation_pairs'], sg_prediction['relation_scores_all'],
                     top_Ns, result_dict, mode)
 
-        evaluator[mode].print_stats(logger)
-        logger.warning('=====================' + mode + '(IMP)' + '=========================')
-        rowan_nums = {mode+str(key): np.mean(np.array(val))
-                      for key, val in evaluator[mode].result_dict[mode + '_recall'].items()}
-        rowan_metric.update(rowan_nums)
+    evaluator[mode].print_stats(logger)
+    logger.warning('=====================' + mode + '(IMP)' + '=========================')
+    rowan_nums = {mode+str(key): np.mean(np.array(val))
+                  for key, val in evaluator[mode].result_dict[mode + '_recall'].items()}
+    rowan_metric.update(rowan_nums)
 
-        logger.warning("{}-recall@20: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][20]))))
-        logger.warning("{}-recall@50: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][50]))))
-        logger.warning("{}-recall@100: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][100]))))
-        danfei_nums = {mode+str(key): np.mean(np.array(val)) for key, val in result_dict[mode + '_recall'].items()}
-        danfei_metric.update(danfei_nums)
+    logger.warning("{}-recall@20: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][20]))))
+    logger.warning("{}-recall@50: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][50]))))
+    logger.warning("{}-recall@100: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][100]))))
+    danfei_nums = {mode+str(key): np.mean(np.array(val)) for key, val in result_dict[mode + '_recall'].items()}
+    danfei_metric.update(danfei_nums)
 
     return {"danfei_metric": danfei_metric, "rowan_metric": rowan_metric}
 

@@ -60,7 +60,7 @@ class NeuralMotif(nn.Module):
         # mode of Neural Motifs
         self.MODES = ('sgdet', 'sgcls', 'predcls')
         self.mode = config.MODEL.ROI_RELATION_HEAD.MODE
-        assert self.mode == 'sgdet', "Currently only sgdet is implemented..."
+        # assert self.mode == 'sgdet', "Currently only sgdet is implemented..."
 
         self.use_tanh = config.MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.USE_TANH
 
