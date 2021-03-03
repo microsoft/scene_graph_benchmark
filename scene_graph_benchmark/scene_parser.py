@@ -52,6 +52,7 @@ class SceneParser(GeneralizedRCNN):
         self.device = cfg.MODEL.DEVICE
         self.detector_pre_calculated = self.cfg.MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED
         self.detector_force_boxes = self.cfg.MODEL.ROI_BOX_HEAD.FORCE_BOXES
+        self.cfg_check()
 
         feature_dim = self.backbone.out_channels
         if not self.cfg.MODEL.ROI_RELATION_HEAD.SHARE_CONV_BACKBONE:
@@ -80,6 +81,12 @@ class SceneParser(GeneralizedRCNN):
                 self.obj_feature_extractor = make_roi_relation_box_feature_extractor(cfg, feature_dim)
             else:
                 self.obj_feature_extractor = make_roi_relation_box_feature_extractor(cfg, feature_dim)
+
+    def cfg_check(self):
+        if self.cfg.MODEL.ROI_RELATION_HEAD.MODE=='predcls':
+            assert self.cfg.MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED==False and self.cfg.MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS==False
+        if self.cfg.MODEL.ROI_RELATION_HEAD.MODE=='sgcls':
+            assert self.cfg.MODEL.ROI_BOX_HEAD.FORCE_BOXES==True and self.cfg.MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED==False
 
     def to(self, device, **kwargs):
         super(SceneParser, self).to(device, **kwargs)
@@ -215,7 +222,7 @@ class SceneParser(GeneralizedRCNN):
             if targets is not None or len(targets) != 0:
                 predictions = self.roi_heads['box'].loss_evaluator.prepare_labels(predictions, targets)
         
-        if self.force_relations and not self.training:
+        if (self.force_relations or self.cfg.MODEL.ROI_RELATION_HEAD.MODE=='predcls') and not self.training:
             predictions = targets
             for pred in predictions:
                 pred.add_field('scores', torch.tensor([1.0]*len(pred)).to(self.device))
