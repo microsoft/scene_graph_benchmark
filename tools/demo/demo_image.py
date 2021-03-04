@@ -118,6 +118,8 @@ def main():
     if isinstance(model, SceneParser):
         rel_dets = dets['relations']
         dets = dets['objects']
+    else:
+        rel_dets = []
 
     for obj in dets:
         obj["class"] = dataset_labelmap[obj["class"]]
