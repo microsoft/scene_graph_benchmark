@@ -31,8 +31,8 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
     rowan_metric = {}
 
     result_dict[mode + '_recall'] = {20: [], 50: [], 100: []}
-    for image_key, sg_prediction in predict_dicts.items():
-        gt_boxlist = gt_dicts[image_key]
+    for image_key, gt_boxlist in gt_dicts.items():
+        sg_prediction = predict_dicts[image_key]
 
         gt_entry = {
             'gt_classes': gt_boxlist.get_field("labels").numpy(),
@@ -46,21 +46,30 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
         # multiplier = np.ones((obj_scores.shape[0], obj_scores.shape[0]))
         # np.fill_diagonal(multiplier, 0)
         # fp_pred = fp_pred * multiplier.reshape(obj_scores.shape[0] * (obj_scores.shape[0] - 1), 1)
-        scores = np.column_stack((
-            obj_scores[all_rels[:, 0]],
-            obj_scores[all_rels[:, 1]],
-            fp_pred[:, 1:].max(1)
-        )).prod(1)
-        sorted_inds = np.argsort(-scores)
-        sorted_inds = sorted_inds[scores[sorted_inds] > 0]  # [:100]
+        if len(all_rels) != 0:
+            scores = np.column_stack((
+                obj_scores[all_rels[:, 0]],
+                obj_scores[all_rels[:, 1]],
+                fp_pred[:, 1:].max(1)
+            )).prod(1)
+            sorted_inds = np.argsort(-scores)
+            sorted_inds = sorted_inds[scores[sorted_inds] > 0]  # [:100]
 
-        pred_entry = {
-            'pred_boxes': sg_prediction['bboxes'].numpy(),
-            'pred_classes': sg_prediction['bbox_labels'].numpy(),
-            'obj_scores': sg_prediction['bbox_scores'].numpy(),
-            'pred_rel_inds': all_rels[sorted_inds],
-            'rel_scores': fp_pred[sorted_inds],
-        }
+            pred_entry = {
+                'pred_boxes': sg_prediction['bboxes'].numpy(),
+                'pred_classes': sg_prediction['bbox_labels'].numpy(),
+                'obj_scores': sg_prediction['bbox_scores'].numpy(),
+                'pred_rel_inds': all_rels[sorted_inds],
+                'rel_scores': fp_pred[sorted_inds],
+            }
+        else:
+            pred_entry = {
+                'pred_boxes': sg_prediction['bboxes'].numpy(),
+                'pred_classes': sg_prediction['bbox_labels'].numpy(),
+                'obj_scores': sg_prediction['bbox_scores'].numpy(),
+                'pred_rel_inds': np.array([]),
+                'rel_scores': np.array([]),
+            }
 
         evaluator[mode].evaluate_scene_graph_entry(
             gt_entry,
@@ -73,11 +82,11 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
                     top_Ns, result_dict, mode)
 
     evaluator[mode].print_stats(logger)
-    logger.warning('=====================' + mode + '(IMP)' + '=========================')
     rowan_nums = {mode+str(key): np.mean(np.array(val))
-                  for key, val in evaluator[mode].result_dict[mode + '_recall'].items()}
+                    for key, val in evaluator[mode].result_dict[mode + '_recall'].items()}
     rowan_metric.update(rowan_nums)
 
+    logger.warning('=====================' + mode + '(IMP)' + '=========================')
     logger.warning("{}-recall@20: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][20]))))
     logger.warning("{}-recall@50: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][50]))))
     logger.warning("{}-recall@100: {}".format(mode, np.mean(np.array(result_dict[mode + '_recall'][100]))))
@@ -103,6 +112,11 @@ def evaluate(gt_classes, gt_boxes, gt_rels,
     rel_scores = rel_scores.cpu()
 
     if gt_rels.ne(0).sum() == 0:
+        return (None, None)
+    
+    if len(rel_inds) == 0:
+        for k in result_dict[mode + '_recall']:
+            result_dict[mode + '_recall'][k].append(0)
         return (None, None)
 
     rel_sum = ((gt_rels.sum(1) > 0).int() + (gt_rels.sum(0) > 0).int())

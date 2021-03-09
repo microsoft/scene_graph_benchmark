@@ -61,6 +61,11 @@ def evaluate_from_dict(gt_entry, pred_entry, mode, result_dict, multiple_preds=F
     pred_rel_inds = pred_entry['pred_rel_inds']
     rel_scores = pred_entry['rel_scores']
 
+    if len(pred_rel_inds) == 0:
+        for k in result_dict[mode + '_recall']:
+            result_dict[mode + '_recall'][k].append(0)
+        return None, None, None
+
     if mode == 'predcls':
         pred_boxes = gt_boxes
         pred_classes = gt_classes
