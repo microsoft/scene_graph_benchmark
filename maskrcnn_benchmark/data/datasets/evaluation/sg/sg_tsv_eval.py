@@ -33,6 +33,8 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
     result_dict[mode + '_recall'] = {20: [], 50: [], 100: []}
     for image_key, gt_boxlist in gt_dicts.items():
         sg_prediction = predict_dicts[image_key]
+        if len(sg_prediction)==0:
+            sg_prediction = {'bboxes':torch.as_tensor([]) , 'bbox_scores':torch.tensor([]), 'bbox_labels':torch.tensor([]), 'relation_pairs':torch.tensor([]), 'relation_scores':torch.tensor([]), 'relation_scores_all':torch.tensor([]), 'relation_labels':torch.tensor([])}
 
         gt_entry = {
             'gt_classes': gt_boxlist.get_field("labels").numpy(),
@@ -40,13 +42,19 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
             'gt_boxes': gt_boxlist.bbox.numpy(),
         }
 
-        obj_scores = sg_prediction['bbox_scores'].numpy()
-        all_rels = sg_prediction['relation_pairs'].numpy()
-        fp_pred = sg_prediction['relation_scores_all'].numpy()
-        # multiplier = np.ones((obj_scores.shape[0], obj_scores.shape[0]))
-        # np.fill_diagonal(multiplier, 0)
-        # fp_pred = fp_pred * multiplier.reshape(obj_scores.shape[0] * (obj_scores.shape[0] - 1), 1)
-        if len(all_rels) != 0:
+        if len(sg_prediction['relation_pairs'].numpy())==0:
+            pred_entry = {
+                'pred_boxes': np.array([]),
+                'pred_classes': np.array([]),
+                'obj_scores': np.array([]),
+                'pred_rel_inds': np.array([]),
+                'rel_scores': np.array([]),
+            }
+        else:
+            obj_scores = sg_prediction['bbox_scores'].numpy()
+            all_rels = sg_prediction['relation_pairs'].numpy()
+            fp_pred = sg_prediction['relation_scores_all'].numpy()
+
             scores = np.column_stack((
                 obj_scores[all_rels[:, 0]],
                 obj_scores[all_rels[:, 1]],
@@ -61,14 +69,6 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
                 'obj_scores': sg_prediction['bbox_scores'].numpy(),
                 'pred_rel_inds': all_rels[sorted_inds],
                 'rel_scores': fp_pred[sorted_inds],
-            }
-        else:
-            pred_entry = {
-                'pred_boxes': sg_prediction['bboxes'].numpy(),
-                'pred_classes': sg_prediction['bbox_labels'].numpy(),
-                'obj_scores': sg_prediction['bbox_scores'].numpy(),
-                'pred_rel_inds': np.array([]),
-                'rel_scores': np.array([]),
             }
 
         evaluator[mode].evaluate_scene_graph_entry(
@@ -389,7 +389,6 @@ def prepare_vrd_predictions(pred_tsv_file, labelmap):
             relation_labels.append(labelmap['relation_to_ind'][triplet['class']])
 
         predictions_dict[img_key] = {'bboxes':torch.as_tensor(bboxes).reshape(-1, 4) , 'bbox_scores':torch.tensor(bbox_scores), 'bbox_labels':torch.tensor(bbox_labels), 'relation_pairs':torch.tensor(idx_pairs), 'relation_scores':torch.tensor(relation_scores), 'relation_scores_all':torch.tensor(relation_scores_all), 'relation_labels':torch.tensor(relation_labels)}
-
     return predictions_dict
 
 def prepare_vrd_groundtruths(dataset):
