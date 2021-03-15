@@ -211,12 +211,3 @@ note = {Accessed: [Insert date here]}
 maskrcnn-benchmark is released under the MIT license. See [LICENSE](LICENSE) for additional details.
 
 ## Acknowledgement
-
-## Notes when testing
-remove SKIP_UNMATCHED_LAYERS_TRAIN, TEST.OUTPUT_SCORES_ALL
-
-change NEURAL_MOTIF.OBJ_CLASSES_FN from txt to json
-
-To evaluate relations, one needs to output "relation_scores_all" in the TSV_SAVE_SUBSET.
-
-Other repos have three modes: sgdet, sgcls, predcls. We only have two modes: force_relation = T/F. Is there any difference?
