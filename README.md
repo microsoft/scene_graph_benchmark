@@ -9,14 +9,13 @@ creating detection and segmentation models using PyTorch 1.0.
 
 
 ## Highlights
-- **Upgrad to pytorch 1.4**
+- **Upgrad to pytorch 1.4 (can also upgrade to 1.7)**
 - **Multi-GPU training and inference**
-- **Mixed precision training:** trains faster with less GPU memory on [NVIDIA tensor cores](https://developer.nvidia.com/tensor-cores).
 - **Batched inference:** can perform inference using multiple images per batch per GPU.
 - **Fast and flexible tsv dataset format**
 - **Remove FasterRCNN detector dependency:** during relation head training, can plugin bounding boxes from any detector.
 - Provides pre-trained models for different scene graph detection algorithms ([IMP](https://arxiv.org/pdf/1701.02426.pdf), [MSDN](http://cvboy.com/publication/iccv2017_msdn/), [GRCNN](https://arxiv.org/pdf/1808.00191.pdf), [Neural Motif](https://arxiv.org/pdf/1711.06640.pdf), [RelDN](https://arxiv.org/pdf/1903.02728.pdf)).
-- Provides bounding box level feature extraction functionality
+- Provides bounding box level and relation level feature extraction functionalities
 - Provides large detector backbones (ResNxt152)
 
 
@@ -88,16 +87,53 @@ python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/train_sg_net.py
 ## Evaluation
 You can test your model directly on single or multiple gpus. 
 To evaluate relations, one needs to output "relation_scores_all" in the TSV_SAVE_SUBSET.
-Here is an example on 4 GPUS:
+Here are a few example command line for evaluating on 4 GPUS:
 ```bash
-export NGPUS=8
-python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vrd/R152FPN_vrd_reldn.yaml
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH 
 
 # vg iterative message passing
 python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_imp.yaml --ckpt ~/azureblobs/sgmodels/vg_jwy/R50FPN_imp_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_false_imp_feature_update_step_2/model_final.pth DATA_DIR datasets OUTPUT_DIR outputs MODEL.ROI_RELATION_HEAD.USE_BIAS False MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False TEST.IMS_PER_BATCH 2 MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS False
 
 # vg neural motif evaluation
 python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --ckpt models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/model_final.pth DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 OUTPUT_DIR models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2 MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS False
+
+# oi IMP evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_imp_bias_oi.yaml
+
+# oi MSDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_msdn_bias_oi.yaml
+
+# oi neural motif evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_motif_oi.yaml
+
+# oi GRCNN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_grcnn_oi.yaml
+
+# oi RelDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vrd/R152FPN_vrd_reldn.yaml
+```
+
+To evaluate in sgcls mode:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_BOX_HEAD.FORCE_BOXES True MODEL.ROI_RELATION_HEAD.MODE "sgcls"
+```
+
+To evaluate in predcls mode:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_RELATION_HEAD.MODE "predcls"
+```
+
+To evaluate with ground truth bbox and ground truth pairs:
+```bash
+export NGPUS=4
+
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS True
 ```
 
 
@@ -148,9 +184,7 @@ python tools/test_sg_net.py --config-file sgg_configs/vgattr/vinvl_x152c4.yaml T
 ```
 To extract relation features (union bounding box's feature), in yaml file, set `TEST.OUTPUT_RELATION_FEATURE` to  `True`, add `relation_feature` in `TEST.TSV_SAVE_SUBSET`. 
 
-To extract features with ground truth bounding boxes, set `MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED` to `True`, replace `predictedbbox` in data yaml file with ground truth bbox tsv.
-
-To extract relation features with ground truth bboxes and pairs, set `MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS` to `True`.
+To extract bounding box features, in yaml file, set `TEST.OUTPUT_FEATURE` to  `True`, add `feature` in `TEST.TSV_SAVE_SUBSET`.
 
 
 ## Troubleshooting
