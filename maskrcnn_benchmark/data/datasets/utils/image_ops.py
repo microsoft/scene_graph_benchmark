@@ -1,15 +1,13 @@
 # Copyright (c) 2021 Microsoft Corporation. Licensed under the MIT license. 
-import numpy as np
 import base64
-import cv2
+from PIL import Image
+import io
 
 
 def img_from_base64(imagestring):
     try:
-        jpgbytestring = base64.b64decode(imagestring)
-        nparr = np.frombuffer(jpgbytestring, np.uint8)
-        r = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return r
+        img = Image.open(io.BytesIO(base64.b64decode(imagestring)))
+        return img.convert('RGB')
     except ValueError:
         return None
 

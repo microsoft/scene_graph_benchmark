@@ -81,8 +81,7 @@ def generate_hw_file(img_file, save_file=None):
         for i, row in tqdm(enumerate(rows)):
             row1 = [row[0]]
             img = img_from_base64(row[-1])
-            height = img.shape[0]
-            width = img.shape[1]
+            width, height = img.size
             row1.append(json.dumps([{"height":height, "width": width}]))
             yield row1
 

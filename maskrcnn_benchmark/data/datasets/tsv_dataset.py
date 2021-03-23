@@ -56,10 +56,7 @@ class TSVDataset(object):
         line_no = self.get_line_no(idx)
         row = self.img_tsv.seek(line_no)
         # use -1 to support old format with multiple columns.
-        cv2_im = img_from_base64(row[-1])
-        cv2_im = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
-        # convert to PIL Image as required by transforms
-        img = Image.fromarray(cv2_im)
+        img = img_from_base64(row[-1])
         return img
 
     def get_annotations(self, idx):
