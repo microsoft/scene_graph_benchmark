@@ -22,10 +22,10 @@ from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
 
 # Check if we can enable mixed-precision via apex.amp
-try:
-    from apex import amp
-except ImportError:
-    raise ImportError('Use APEX for mixed precision via apex.amp')
+# try:
+#     from apex import amp
+# except ImportError:
+#     raise ImportError('Use APEX for mixed precision via apex.amp')
 
 
 def main():
@@ -83,8 +83,8 @@ def main():
     model.to(cfg.MODEL.DEVICE)
 
     # Initialize mixed-precision if necessary
-    use_mixed_precision = cfg.DTYPE == 'float16'
-    amp_handle = amp.init(enabled=use_mixed_precision, verbose=cfg.AMP_VERBOSE)
+    # use_mixed_precision = cfg.DTYPE == 'float16'
+    # amp_handle = amp.init(enabled=use_mixed_precision, verbose=cfg.AMP_VERBOSE)
 
     output_dir = cfg.OUTPUT_DIR
     checkpointer = DetectronCheckpointer(cfg, model, save_dir=output_dir)
