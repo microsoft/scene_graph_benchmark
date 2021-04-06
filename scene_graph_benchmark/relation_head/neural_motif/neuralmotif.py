@@ -130,9 +130,12 @@ class NeuralMotif(nn.Module):
 
         # obj_gt_labels: (N,). Not one hot vector.
         obj_gt_labels = None
-        if self.training or self.mode == 'predcls':
+        if self.training:
             _, obj_gt_labels, _ \
                 = _get_tensor_from_boxlist(proposals, 'gt_labels')
+        elif self.mode == 'predcls':
+            _, obj_gt_labels, _ \
+                = _get_tensor_from_boxlist(proposals, 'labels')
 
         # get index in the proposal pairs
         edge_visual_feats, rel_inds = self._union_box_feats(features, proposals, proposal_pairs)
