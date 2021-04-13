@@ -98,11 +98,20 @@ export NGPUS=4
 
 python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file CONFIG_FILE_PATH 
 
-# vg iterative message passing
-python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_imp.yaml --ckpt ~/azureblobs/sgmodels/vg_jwy/R50FPN_imp_no_pre_computedcontrastive_loss.use_flag_false_seperate_so_feature_extractor_false_use_bias_false_imp_feature_update_step_2/model_final.pth DATA_DIR datasets OUTPUT_DIR outputs MODEL.ROI_RELATION_HEAD.USE_BIAS False MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False TEST.IMS_PER_BATCH 2 MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS False
+# vg IMP evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_imp.yaml
+
+# vg MSDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_msdn.yaml
 
 # vg neural motif evaluation
-python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --ckpt models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/model_final.pth DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 OUTPUT_DIR models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2 MODEL.ROI_RELATION_HEAD.USE_ONLINE_OBJ_LABELS False
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml
+
+# vg GRCNN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_grcnn.yaml
+
+# vg RelDN evaluation
+python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/vg_vrd/rel_danfeiX_FPN50_reldn.yaml
 
 # oi IMP evaluation
 python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file sgg_configs/oi_vrd/R152FPN_imp_bias_oi.yaml
