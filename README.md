@@ -26,21 +26,26 @@ Check [INSTALL.md](INSTALL.md) for installation instructions.
 
 ## Model Zoo and Baselines
 
-Pre-trained models, baselines and comparison with Detectron and mmdetection
-can be found in [SCENE_GRAPH_MODEL_ZOO.md](SCENE_GRAPH_MODEL_ZOO.md)
-
+Pre-trained models can be found in [SCENE_GRAPH_MODEL_ZOO.md](SCENE_GRAPH_MODEL_ZOO.md)
 
 ## Visualization and Demo
 We provide a helper class to simplify writing inference pipelines using pre-trained models (Currently only support objects and attributes).
 Here is how we would do it. Run the following commands:
 ```bash
+# visualize VinVL object detection
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
 python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.yaml --img_file ../maskrcnn-benchmark-1/datasets1/imgs/woman_fish.jpg --save_file output/woman_fish_x152c4.obj.jpg MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION False
 
+# visualize VinVL object-attribute detection
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
 python tools/demo/demo_image.py --config_file sgg_configs/vgattr/vinvl_x152c4.yaml --img_file ../maskrcnn-benchmark-1/datasets1/imgs/woman_fish.jpg --save_file output/woman_fish_x152c4.attr.jpg --visualize_attr MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION False
 
+# visualize OpenImage scene graph generation by RelDN
 python tools/demo/demo_image.py --config_file sgg_configs/vrd/R152FPN_vrd_reldn.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_output.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False
 
-# neural motif model demo
+# visualize Visual Genome scene graph generation by neural motif
 python tools/demo/demo_image.py --config_file sgg_configs/vg_vrd/rel_danfeiX_FPN50_nm.yaml --img_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa.jpg --save_file demo/1024px-Gen_Robert_E_Lee_on_Traveler_at_Gettysburg_Pa_vgnm.jpg --visualize_relation MODEL.ROI_RELATION_HEAD.DETECTOR_PRE_CALCULATED False DATASETS.LABELMAP_FILE "visualgenome/VG-SGG-dicts-danfeiX-clipped.json" DATA_DIR /home/penzhan/GitHub/maskrcnn-benchmark-1/datasets1 MODEL.ROI_RELATION_HEAD.USE_BIAS True MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP True MODEL.ROI_HEADS.DETECTIONS_PER_IMG 64 MODEL.ROI_RELATION_HEAD.SHARE_BOX_FEATURE_EXTRACTOR False MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.OBJ_LSTM_NUM_LAYERS 0 MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.EDGE_LSTM_NUM_LAYERS 2 TEST.IMS_PER_BATCH 2
 ```
 
@@ -176,10 +181,13 @@ if isinstance(dataset, datasets.MyDataset):
 ```
 
 
-## Feature extraction
+## VinVL Feature extraction
 
 The output feature will be encoded as base64
 ```bash
+# extract vision features with VinVL object-attribute detection model
+# pretrained models at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth
+# the associated labelmap at https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/VG-SGG-dicts-vgoi6-clipped.json
 python tools/test_sg_net.py --config-file sgg_configs/vgattr/vinvl_x152c4.yaml TEST.IMS_PER_BATCH 2 MODEL.WEIGHT models/vinvl/vinvl_vg_x152c4.pth MODEL.ROI_HEADS.NMS_FILTER 1 MODEL.ROI_HEADS.SCORE_THRESH 0.2 DATA_DIR "../maskrcnn-benchmark-1/datasets1" TEST.IGNORE_BOX_REGRESSION True MODEL.ATTRIBUTE_ON True
 ```
 To extract relation features (union bounding box's feature), in yaml file, set `TEST.OUTPUT_RELATION_FEATURE` to  `True`, add `relation_feature` in `TEST.TSV_SAVE_SUBSET`. 
@@ -196,7 +204,7 @@ free to open a new issue.
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry requires the `url` LaTeX package.
 ```
 @misc{han2021sgbenchmark,
-author = {Xiaotian Han and Pengchuan Zhang and Jianwei Yang and Houdong Hu and Lei Zhang},
+author = {Xiaotian Han and Jianwei Yang and Houdong Hu and Lei Zhang and Pengchuan Zhang},
 title = {{Scene Graph Benchmark}},
 year = {2021},
 howpublished = {\url{https://github.com/microsoft/scene_graph_benchmark}},
