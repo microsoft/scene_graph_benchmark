@@ -40,7 +40,7 @@ MODEL:
     USE_RELPN: True
     ALGORITHM: "sg_grcnn"
     MODE: 'sgdet'
-    USE_BIAS: True # False
+    USE_BIAS: True
     FILTER_NON_OVERLAP: True
     UPDATE_BOX_REG: False
     SHARE_CONV_BACKBONE: False

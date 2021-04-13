@@ -39,7 +39,7 @@ MODEL:
     FORCE_RELATIONS: False
     ALGORITHM: "sg_msdn"
     MODE: 'sgdet'
-    USE_BIAS: True
+    USE_BIAS: False
     FILTER_NON_OVERLAP: True
     UPDATE_BOX_REG: False
     SHARE_CONV_BACKBONE: False

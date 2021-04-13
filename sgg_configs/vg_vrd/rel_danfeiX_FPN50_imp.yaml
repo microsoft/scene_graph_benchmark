@@ -39,7 +39,7 @@ MODEL:
     FORCE_RELATIONS: False
     ALGORITHM: "sg_imp"
     MODE: 'sgdet'
-    USE_BIAS: True # False
+    USE_BIAS: True
     FILTER_NON_OVERLAP: True
     UPDATE_BOX_REG: False
     SHARE_CONV_BACKBONE: False

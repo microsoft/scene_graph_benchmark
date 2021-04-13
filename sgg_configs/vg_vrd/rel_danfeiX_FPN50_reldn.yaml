@@ -37,14 +37,14 @@ MODEL:
   ROI_RELATION_HEAD:
     DETECTOR_PRE_CALCULATED: False
     FORCE_RELATIONS: False
-    ALGORITHM: "sg_msdn"
+    ALGORITHM: "sg_reldn"
     MODE: 'sgdet'
-    USE_BIAS: True
+    USE_BIAS: False
     FILTER_NON_OVERLAP: True
     UPDATE_BOX_REG: False
     SHARE_CONV_BACKBONE: False
     SHARE_BOX_FEATURE_EXTRACTOR: False
-    SEPERATE_SO_FEATURE_EXTRACTOR: False
+    SEPERATE_SO_FEATURE_EXTRACTOR: True
     NUM_CLASSES: 51 # 10
     POOLER_RESOLUTION: 7
     POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
@@ -52,10 +52,9 @@ MODEL:
     FEATURE_EXTRACTOR: "FPN2MLPRelationFeatureExtractor"
     PREDICTOR: "FPNRelationPredictor"
     CONTRASTIVE_LOSS:
-      USE_FLAG: False
+      USE_FLAG: True
     TRIPLETS_PER_IMG: 100
-    POSTPROCESS_METHOD: 'constrained' # previously it's unconstrained
-    MSDN_FEATURE_UPDATE_STEP: 2
+    POSTPROCESS_METHOD: 'constrained' # previously it's unconstrained 
 INPUT:
   MIN_SIZE_TRAIN: (600,)
   MAX_SIZE_TRAIN: 1000

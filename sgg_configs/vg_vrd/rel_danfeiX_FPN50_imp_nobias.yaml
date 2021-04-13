@@ -37,9 +37,9 @@ MODEL:
   ROI_RELATION_HEAD:
     DETECTOR_PRE_CALCULATED: False
     FORCE_RELATIONS: False
-    ALGORITHM: "sg_msdn"
+    ALGORITHM: "sg_imp"
     MODE: 'sgdet'
-    USE_BIAS: True
+    USE_BIAS: False
     FILTER_NON_OVERLAP: True
     UPDATE_BOX_REG: False
     SHARE_CONV_BACKBONE: False
@@ -55,7 +55,7 @@ MODEL:
       USE_FLAG: False
     TRIPLETS_PER_IMG: 100
     POSTPROCESS_METHOD: 'constrained' # previously it's unconstrained
-    MSDN_FEATURE_UPDATE_STEP: 2
+    IMP_FEATURE_UPDATE_STEP: 2
 INPUT:
   MIN_SIZE_TRAIN: (600,)
   MAX_SIZE_TRAIN: 1000
