@@ -195,11 +195,11 @@ free to open a new issue.
 ## Citations
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry requires the `url` LaTeX package.
 ```
-@misc{TBD,
-author = {TBD},
-title = {{TBD}},
+@misc{han2021sgbenchmark,
+author = {Xiaotian Han and Pengchuan Zhang and Jianwei Yang and Houdong Hu and Lei Zhang},
+title = {{Scene Graph Benchmark}},
 year = {2021},
-howpublished = {\url{TBD}},
+howpublished = {\url{https://github.com/microsoft/scene_graph_benchmark}},
 note = {Accessed: [Insert date here]}
 }
 
