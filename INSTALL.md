@@ -39,7 +39,7 @@ python -m pip install cityscapesscripts
 conda install -c conda-forge nvidia-apex
 
 # install Scene Graph Detection
-git clone https://github.com/hanxiaotian/scene_graph_benchmark.git
+git clone https://github.com/microsoft/scene_graph_benchmark
 cd scene_graph_benchmark
 
 # the following will install the lib with

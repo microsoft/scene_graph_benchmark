@@ -53,7 +53,12 @@ python tools/demo/demo_image.py --config_file sgg_configs/vg_vrd/rel_danfeiX_FPN
 
 For the following examples to work, you need to first install this repo.
 
-You will also need to download the dataset.
+You will also need to download the dataset. Datasets can be downloaded by [azcopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) with following command:
+```bash
+path/to/azcopy copy 'https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/datasets/TASK_NAME' <target folder> --recursive
+```
+`TASK_NAME` could be `visualgenome`, `openimages_v5c`.
+
 We recommend to symlink the path to the dataset to `datasets/` as follows
 
 ```bash
