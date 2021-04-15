@@ -147,11 +147,12 @@ def main():
 
     draw_bb(cv2_img, rects, labels, scores)
 
-    rel_subj_centers = [r['subj_center'] for r in rel_dets]
-    rel_obj_centers = [r['obj_center'] for r in rel_dets]
-    rel_scores = [r['conf'] for r in rel_dets]
-    rel_labels = [r['class'] for r in rel_dets]
-    draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
+    if cfg.MODEL.RELATION_ON and args.visualize_relation:
+        rel_subj_centers = [r['subj_center'] for r in rel_dets]
+        rel_obj_centers = [r['obj_center'] for r in rel_dets]
+        rel_scores = [r['conf'] for r in rel_dets]
+        rel_labels = [r['class'] for r in rel_dets]
+        draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
 
     if not args.save_file:
         save_file = op.splitext(args.img_file)[0] + ".detect.jpg"
