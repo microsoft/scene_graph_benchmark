@@ -1,0 +1,70 @@
+MODEL:
+    META_ARCHITECTURE: "AttrRCNN"
+    WEIGHT: "/mnt/model_storage/msvit/visionlongformer/longtiny1191_ape0_exact0_nglo1_mode1_swith075/model_best.pth"
+    BACKBONE:
+      CONV_BODY: "ViL-C4"
+    TRANSFORMER:
+      DROP: 0.0
+      DROP_PATH: 0.1
+      NORM_EMBED: True
+      OUT_FEATURES: ["layer3"]
+      VITHEADARCH: "l4,h12,d768,n1,s0,g0,p2,f7,a0"
+      MSVIT:
+        ARCH: "l1,h3,d96,n1,s1,g1,p4,f7,a0_l2,h3,d192,n2,s1,g1,p2,f7,a0_l3,h6,d384,n8,s1,g1,p2,f7,a0"
+        ATTN_TYPE: longformerhand
+        ONLY_GLOBAL: False
+        SHARE_KV: True
+        SHARE_W: True
+        SW_EXACT: 0
+    RPN:
+      PRE_NMS_TOP_N_TEST: 6000
+      POST_NMS_TOP_N_TEST: 300
+    ROI_HEADS:
+      BATCH_SIZE_PER_IMAGE: 384 # 512
+      POSITIVE_FRACTION: 0.5 # 0.25
+      SCORE_THRESH: 0.05 # 0.0001
+      DETECTIONS_PER_IMG: 100 # 600
+      MIN_DETECTIONS_PER_IMG: 10
+    ROI_BOX_HEAD:
+      NUM_CLASSES: 1595
+      FEATURE_EXTRACTOR: "ViTHeadFeatureExtractor"
+    ROI_ATTRIBUTE_HEAD:
+      NUM_ATTRIBUTES: 525
+      POSTPROCESS_ATTRIBUTES_THRESHOLD: 0.0
+      FEATURE_EXTRACTOR: "ViTHeadFeatureExtractor"
+    ATTRIBUTE_ON: False
+INPUT:
+    MIN_SIZE_TEST: 600
+    MAX_SIZE_TEST: 1000
+    PIXEL_MEAN: [123.675, 116.280, 103.530]
+    PIXEL_STD: [58.395, 57.120, 57.375]
+DATASETS:
+    TRAIN: ("visualgenome/train_vgoi6_clipped.yaml",)
+    TEST: ("visualgenome/test_vgoi6_clipped.yaml",)
+    FACTORY_TRAIN: ("VGTSVDataset",)
+    FACTORY_TEST: ("VGTSVDataset",)
+DATALOADER:
+    NUM_WORKERS: 0
+SOLVER:
+    BASE_LR: 0.0001
+    WEIGHT_DECAY: 0.05
+    STEPS: (75000, 100000)
+    MAX_ITER: 170000
+    IMS_PER_BATCH: 1
+    CHECKPOINT_PERIOD: 5000
+    OPTIMIZER: "ADAMW"
+    CLIP_GRADIENTS:
+      ENABLED: True
+      CLIP_TYPE: "full_model"
+      CLIP_VALUE: 1.0
+      NORM_TYPE: 2.0
+TEST:
+    IMS_PER_BATCH: 1
+    SKIP_PERFORMANCE_EVAL: False
+    SAVE_PREDICTIONS: True
+    SAVE_RESULTS_TO_TSV: True
+    TSV_SAVE_SUBSET: ['rect', 'class', 'conf']
+    GATHER_ON_CPU: False
+OUTPUT_DIR: "./output/vilc4_test"
+DATA_DIR: "./datasets"
+DISTRIBUTED_BACKEND: 'nccl'

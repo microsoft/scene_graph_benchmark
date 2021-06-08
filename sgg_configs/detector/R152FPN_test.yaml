@@ -1,6 +1,6 @@
 MODEL:
     META_ARCHITECTURE: "GeneralizedRCNN"
-    WEIGHT: "/home/xiaothan/c/Users/xiaothan/Downloads/frcnn_x152fpn_4sets.yaml_pos0.5_lr0.005_bsz16.pth"
+    WEIGHT: "pretrained_models/frcnn_x152fpn_4sets.yaml_pos0.5_lr0.005_bsz16.pth"
     BACKBONE:
       CONV_BODY: "R-152-FPN"
     RESNETS: 

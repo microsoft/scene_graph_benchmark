@@ -237,7 +237,29 @@ def inference(
     total_timer = Timer()
     inference_timer = Timer()
     total_timer.tic()
-    predictions = compute_on_dataset(model, data_loader, device, bbox_aug, inference_timer)
+
+    output_pth_name = 'predictions_forcebox.pth' if eval_attributes else 'predictions.pth'
+    if output_folder and os.path.isfile(os.path.join(output_folder, output_pth_name)):
+        logger.info("Predictions.pth file exist in {}, skip computation".format(
+            os.path.join(output_folder, output_pth_name)))
+        if not is_main_process():
+            return
+        if cfg.TEST.SAVE_RESULTS_TO_TSV or not cfg.TEST.SKIP_PERFORMANCE_EVAL:
+            predictions = torch.load(os.path.join(output_folder, output_pth_name))
+    else:
+        if eval_attributes:
+            # change to force_boxes=True mode
+            force_boxes_model = model.force_boxes
+            force_boxes_box = model.roi_heads.box.post_processor.force_boxes
+            model.force_boxes = True
+            model.roi_heads.box.post_processor.force_boxes = True
+            predictions = compute_on_dataset(model, data_loader, device, bbox_aug,
+                                             inference_timer)
+            # return to the original state
+            model.force_boxes = force_boxes_model
+            model.roi_heads.box.post_processor.force_boxes = force_boxes_box
+        else:
+            predictions = compute_on_dataset(model, data_loader, device, bbox_aug, inference_timer)
     # wait for all processes to complete before measuring the time
     synchronize()
     total_time = total_timer.toc()
@@ -262,7 +284,7 @@ def inference(
         return
 
     if output_folder and save_predictions:
-        torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
+        torch.save(predictions, os.path.join(output_folder, output_pth_name))
     
     if output_folder and cfg.TEST.SAVE_RESULTS_TO_TSV:
         logger.info("Convert prediction results to tsv format and save.")
@@ -281,11 +303,16 @@ def inference(
 
     extra_args = dict(
         box_only=box_only,
+        eval_attributes=eval_attributes,
         iou_types=iou_types,
         expected_results=expected_results,
         expected_results_sigma_tol=expected_results_sigma_tol,
         save_predictions=save_predictions
     )
+    if hasattr(cfg.MODEL, 'RELATION_ON'):
+        extra_args['sg_eval'] = cfg.MODEL.RELATION_ON
+    else:
+        extra_args['sg_eval'] = False
 
     return evaluate(dataset=dataset,
                     predictions=predictions,

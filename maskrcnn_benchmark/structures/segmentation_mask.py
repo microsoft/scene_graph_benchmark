@@ -457,7 +457,7 @@ class PolygonList(object):
             # advanced indexing on a single dimension
             selected_polygons = []
             if isinstance(item, torch.Tensor) and item.dtype == torch.bool:
-                item = item.nonzero()
+                item = item.nonzero(as_tuple=False)
                 item = item.squeeze(1) if item.numel() > 0 else item
                 item = item.tolist()
             for i in item:

@@ -8,6 +8,7 @@ from maskrcnn_benchmark.modeling import registry
 from maskrcnn_benchmark.modeling.make_layers import conv_with_kaiming_uniform
 from . import fpn as fpn_module
 from . import resnet
+from .msvit import build_msvit_backbone
 
 
 @registry.BACKBONES.register("R-50-C4")
@@ -70,6 +71,15 @@ def build_resnet_fpn_p3p7_backbone(cfg):
     )
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     model.out_channels = out_channels
+    return model
+
+
+@registry.BACKBONES.register("ViL-C4")
+def build_vilc4_backbone(cfg):
+    assert len(cfg.MODEL.TRANSFORMER.OUT_FEATURES) == 1, "The number of OUT_FEATURES in ViL-C4 is not 1!"
+    body = build_msvit_backbone(cfg)
+    model = nn.Sequential(OrderedDict([("body", body)]))
+    model.out_channels = body.out_planes
     return model
 
 

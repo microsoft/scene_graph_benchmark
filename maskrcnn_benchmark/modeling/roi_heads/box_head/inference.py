@@ -201,7 +201,7 @@ class PostProcessor(nn.Module):
         inds_all = scores > self.score_thresh
         boxlist_empty = self.prepare_empty_boxlist(boxlist)
         for j in range(1, num_classes):
-            inds = inds_all[:, j].nonzero().squeeze(1)
+            inds = inds_all[:, j].nonzero(as_tuple=False).squeeze(1)
 
             if len(inds)>0:
                 scores_j = scores[inds, j]
@@ -239,7 +239,7 @@ class PostProcessor(nn.Module):
                 cls_scores.cpu(), number_of_detections - self.detections_per_img + 1
             )
             keep = cls_scores >= image_thresh.item()
-            keep = torch.nonzero(keep).squeeze(1)
+            keep = torch.nonzero(keep, as_tuple=False).squeeze(1)
             result = result[keep]
         return result
 
@@ -273,7 +273,7 @@ class PostProcessor(nn.Module):
 
         # filter duplicate boxes
         scores_pre, labels_pre = dists_all.max(1)
-        inds_pre = scores_pre.nonzero()
+        inds_pre = scores_pre.nonzero(as_tuple=False)
         assert inds_pre.dim() != 0
         inds_pre = inds_pre.squeeze(1)
 
@@ -331,7 +331,7 @@ class PostProcessor(nn.Module):
         hs = (y2 - y1).squeeze(1)
         keep = (
             (ws >= 0) & (hs >= 0) & (scores > self.score_thresh * 0.01)
-        ).nonzero().squeeze(1)
+        ).nonzero(as_tuple=False).squeeze(1)
         del ws, hs
 
         # apply nms to the previous low-thresholded results

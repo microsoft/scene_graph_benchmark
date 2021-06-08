@@ -91,7 +91,7 @@ void pre_calc_for_bilinear_interpolate(
           T hy = 1. - ly, hx = 1. - lx;
           T w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
 
-          // save weights and indices
+          // save weights and indeces
           PreCalc<T> pc;
           pc.pos1 = y_low * width + x_low;
           pc.pos2 = y_low * width + x_high;
@@ -168,8 +168,8 @@ void ROIAlignForward_cpu_kernel(
     // We do average (integral) pooling inside a bin
     const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
-    // we want to precalculate indices and weights shared by all channels,
-    // this is the key point of optimization
+    // we want to precalculate indeces and weights shared by all chanels,
+    // this is the key point of optimiation
     std::vector<PreCalc<T>> pre_calc(
         roi_bin_grid_h * roi_bin_grid_w * pooled_width * pooled_height);
     pre_calc_for_bilinear_interpolate(
@@ -224,8 +224,8 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
                                 const int pooled_height,
                                 const int pooled_width,
                                 const int sampling_ratio) {
-  AT_ASSERTM(!input.type().is_cuda(), "input must be a CPU tensor");
-  AT_ASSERTM(!rois.type().is_cuda(), "rois must be a CPU tensor");
+  AT_ASSERTM(!input.device().is_cuda(), "input must be a CPU tensor");
+  AT_ASSERTM(!rois.device().is_cuda(), "rois must be a CPU tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -239,10 +239,10 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
     return output;
   }
 
-  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlign_forward", [&] {
+  AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "ROIAlign_forward", [&] {
     ROIAlignForward_cpu_kernel<scalar_t>(
          output_size,
-         input.data<scalar_t>(),
+         input.data_ptr<scalar_t>(),
          spatial_scale,
          channels,
          height,
@@ -250,8 +250,8 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
          pooled_height,
          pooled_width,
          sampling_ratio,
-         rois.data<scalar_t>(),
-         output.data<scalar_t>());
+         rois.data_ptr<scalar_t>(),
+         output.data_ptr<scalar_t>());
   });
   return output;
 }

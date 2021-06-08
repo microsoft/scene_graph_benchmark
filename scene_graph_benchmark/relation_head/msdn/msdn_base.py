@@ -113,7 +113,7 @@ class MSDN_BASE(nn.Module):
                             requires_grad=True).type_as(target_features)
             feature_data.append(temp)
         else:
-            transfer_list = (select_mat.data > 0).nonzero()
+            transfer_list = (select_mat.data > 0).nonzero(as_tuple=False)
             source_indices = Variable(transfer_list[:, 1])
             target_indices = Variable(transfer_list[:, 0])
             source_f = torch.index_select(source_features, 0, source_indices)
@@ -122,7 +122,7 @@ class MSDN_BASE(nn.Module):
 
             for f_id in range(target_features.size()[0]):
                 if select_mat[f_id, :].data.sum() > 0:
-                    feature_indices = (transfer_list[:, 0] == f_id).nonzero()[0]
+                    feature_indices = (transfer_list[:, 0] == f_id).nonzero(as_tuple=False)[0]
                     indices = Variable(feature_indices)
                     features = torch.index_select(transferred_features, 0,
                                                   indices).mean(0).view(-1)

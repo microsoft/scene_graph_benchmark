@@ -1,10 +1,11 @@
 ## Installation
 
 ### Requirements:
-- PyTorch 1.4
+- PyTorch 1.7
 - torchvision
 - cocoapi
-- yacs
+- yacs>=0.1.8
+- numpy>=1.19.5
 - matplotlib
 - GCC >= 4.9
 - OpenCV
@@ -25,18 +26,16 @@ conda activate sg_benchmark
 conda install ipython h5py nltk joblib jupyter pandas scipy
 
 # maskrcnn_benchmark and coco api dependencies
-pip install ninja yacs==0.1.8 cython matplotlib tqdm opencv-python numpy=1.19.5
+pip install ninja yacs>=0.1.8 cython matplotlib tqdm opencv-python numpy>=1.19.5
 
-conda install pytorch==1.4.0 torchvision==0.5.0 cudatoolkit=10.1 -c pytorch
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.1 -c pytorch
+conda install -c conda-forge timm einops
 
 # install pycocotools
 conda install -c conda-forge pycocotools
 
 # install cityscapesScripts
 python -m pip install cityscapesscripts
-
-# install apex
-conda install -c conda-forge nvidia-apex
 
 # install Scene Graph Detection
 git clone https://github.com/microsoft/scene_graph_benchmark

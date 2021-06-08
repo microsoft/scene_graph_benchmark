@@ -15,12 +15,14 @@ import torch
 from maskrcnn_benchmark.config import cfg
 from scene_graph_benchmark.config import sg_cfg
 from maskrcnn_benchmark.data import make_data_loader
+from maskrcnn_benchmark.data.datasets.utils.load_files import config_dataset_file
 from maskrcnn_benchmark.solver import make_lr_scheduler
-from maskrcnn_benchmark.solver import make_optimizer
+from maskrcnn_benchmark.solver import make_optimizer, make_optimizer_d2
 from maskrcnn_benchmark.engine.inference import inference
 from maskrcnn_benchmark.engine.trainer import do_train
 from maskrcnn_benchmark.modeling.detector import build_detection_model
 from scene_graph_benchmark.scene_parser import SceneParser
+from scene_graph_benchmark.AttrRCNN import AttrRCNN
 from maskrcnn_benchmark.utils.checkpoint import DetectronCheckpointer
 from maskrcnn_benchmark.utils.collect_env import collect_env_info
 from maskrcnn_benchmark.utils.comm import synchronize, get_rank
@@ -28,13 +30,7 @@ from maskrcnn_benchmark.utils.imports import import_file
 from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir, save_config
-
-# See if we can use apex.DistributedDataParallel instead of the torch default,
-# and enable mixed-precision via apex.amp
-try:
-    from apex import amp
-except ImportError:
-    raise ImportError('Use APEX for multi-precision via apex.amp')
+from tools.test_sg_net import run_test
 
 import random
 import numpy as np
@@ -50,23 +46,24 @@ torch.backends.cudnn.deterministic = True
 
 
 def train(cfg, local_rank, distributed):
-    model = SceneParser(cfg)
+    if cfg.MODEL.META_ARCHITECTURE == "SceneParser":
+        model = SceneParser(cfg)
+    elif cfg.MODEL.META_ARCHITECTURE == "AttrRCNN":
+        model = AttrRCNN(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
 
-    optimizer = make_optimizer(cfg, model)
+    if cfg.MODEL.BACKBONE.CONV_BODY.startswith("ViL"):
+        optimizer = make_optimizer_d2(cfg, model)
+    else:
+        optimizer = make_optimizer(cfg, model)
     scheduler = make_lr_scheduler(cfg, optimizer)
-
-    # # Initialize mixed-precision training
-    # use_mixed_precision = cfg.DTYPE == "float16"
-    # amp_opt_level = 'O1' if use_mixed_precision else 'O0'
-    # model, optimizer = amp.initialize(model, optimizer, opt_level=amp_opt_level)
 
     if distributed:
         model = torch.nn.parallel.DistributedDataParallel(
             model, device_ids=[local_rank], output_device=local_rank,
             # this should be removed if we update BatchNorm stats
-            broadcast_buffers=False,
+            broadcast_buffers=False, find_unused_parameters=True
         )
 
     arguments = {}
@@ -114,39 +111,6 @@ def train(cfg, local_rank, distributed):
     )
 
     return model
-
-
-def run_test(cfg, model, distributed):
-    if distributed:
-        model = model.module
-    torch.cuda.empty_cache()  # TODO check if it helps
-    iou_types = ("bbox",)
-    if cfg.MODEL.MASK_ON:
-        iou_types = iou_types + ("segm",)
-    if cfg.MODEL.KEYPOINT_ON:
-        iou_types = iou_types + ("keypoints",)
-    output_folders = [None] * len(cfg.DATASETS.TEST)
-    dataset_names = cfg.DATASETS.TEST
-    if cfg.OUTPUT_DIR:
-        for idx, dataset_name in enumerate(dataset_names):
-            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
-            mkdir(output_folder)
-            output_folders[idx] = output_folder
-    data_loaders_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
-    for output_folder, dataset_name, data_loader_val in zip(output_folders, dataset_names, data_loaders_val):
-        inference(
-            model,
-            data_loader_val,
-            dataset_name=dataset_name,
-            iou_types=iou_types,
-            box_only=False if cfg.MODEL.RETINANET_ON else cfg.MODEL.RPN_ONLY,
-            bbox_aug=cfg.TEST.BBOX_AUG.ENABLED,
-            device=cfg.MODEL.DEVICE,
-            expected_results=cfg.TEST.EXPECTED_RESULTS,
-            expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
-            output_folder=output_folder,
-        )
-        synchronize()
 
 
 def main():
@@ -216,7 +180,7 @@ def main():
     model = train(cfg, args.local_rank, args.distributed)
 
     if not args.skip_test:
-        run_test(cfg, model, args.distributed)
+        run_test(cfg, model, args.distributed, model_name="model_final")
 
 
 if __name__ == "__main__":

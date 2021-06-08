@@ -55,7 +55,7 @@ class FastRCNNLossComputation(object):
                 match_j = match_quality_matrix[j].view(1, -1)
                 match_ij = ((match_i + match_j) / 2)
                 # rmeove duplicate index
-                non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero().view(-1).to(match_ij.device)
+                non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero(as_tuple=False).view(-1).to(match_ij.device)
                 match_ij = match_ij.view(-1) # [::match_quality_matrix.shape[1]] = 0
                 match_ij = match_ij[non_duplicate_idx]
                 temp.append(match_ij)
@@ -79,7 +79,7 @@ class FastRCNNLossComputation(object):
         idx_obj = torch.arange(box_obj.shape[0]).view(1, -1, 1).repeat(box_subj.shape[0], 1, 1).to(proposal.bbox.device)
         proposal_idx_pairs = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
-        non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero()
+        non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero(as_tuple=False)
         proposal_box_pairs = proposal_box_pairs[non_duplicate_idx.view(-1)]
         proposal_idx_pairs = proposal_idx_pairs[non_duplicate_idx.view(-1)]
         proposal_pairs = BoxPairList(proposal_box_pairs, proposal.size, proposal.mode)
@@ -167,7 +167,7 @@ class FastRCNNLossComputation(object):
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
                 zip(sampled_pos_inds, sampled_neg_inds)
         ):
-            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img, as_tuple=False).squeeze(1)
             proposal_pairs_per_image = proposal_pairs[img_idx][img_sampled_inds]
             proposal_pairs[img_idx] = proposal_pairs_per_image
 
@@ -245,13 +245,13 @@ class FastRCNNLossComputation(object):
         idx_obj = torch.arange(box_obj.shape[0]).view(1, -1, 1).repeat(box_subj.shape[0], 1, 1).to(proposals[0].bbox.device)
         proposal_idx_pairs_per_image = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
-        keep_idx = (proposal_idx_pairs_per_image[:, 0] != proposal_idx_pairs_per_image[:, 1]).nonzero().view(-1)
+        keep_idx = (proposal_idx_pairs_per_image[:, 0] != proposal_idx_pairs_per_image[:, 1]).nonzero(as_tuple=False).view(-1)
 
         # if we filter non overlap bounding boxes
         if cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
             ious = boxlist_iou(proposals[0], proposals[0]).view(-1)
             ious = ious[keep_idx]
-            keep_idx = keep_idx[(ious > 0).nonzero().view(-1)]
+            keep_idx = keep_idx[(ious > 0).nonzero(as_tuple=False).view(-1)]
         # proposal_idx_pairs_per_image = proposal_idx_pairs_per_image[keep_idx]
         proposal_box_pairs_per_image = proposal_box_pairs_per_image[keep_idx]
         proposal_box_pairs.append(proposal_box_pairs_per_image)
@@ -361,7 +361,7 @@ class FastRCNNLossComputation(object):
         labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
 
         # import pdb; pdb.set_trace()
-        rel_fg_cnt = len(labels.nonzero())
+        rel_fg_cnt = len(labels.nonzero(as_tuple=False))
         rel_bg_cnt = labels.shape[0] - rel_fg_cnt
         ce_weights = labels.new(class_logits.size(1)).fill_(1).float()
         ce_weights[0] = float(rel_fg_cnt) / (rel_bg_cnt + 1e-5)

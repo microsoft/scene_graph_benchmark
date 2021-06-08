@@ -11,6 +11,11 @@ from .utils.label_loader import LabelLoader
 from maskrcnn_benchmark.structures.boxlist_ops import cat_boxlist
 
 
+def sort_key_by_val(dic):
+    sorted_dic = sorted(dic.items(), key=lambda kv: kv[1])
+    return [kv[0] for kv in sorted_dic]
+
+
 class RelationTSVDataset(TSVYamlDataset):
     """
     Generic TSV dataset format for Object Detection.
@@ -28,7 +33,7 @@ class RelationTSVDataset(TSVYamlDataset):
         self.contrastive_loss_on = kwargs['args'].MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_FLAG if kwargs['args'] is not None else False
         
         # construct maps
-        jsondict_file = find_file_path_in_yaml(self.cfg.get("labelmap", None), self.root)
+        jsondict_file = find_file_path_in_yaml(self.cfg.get("labelmap", self.cfg.get("jsondict", None)), self.root) # previous version use jsondict
         jsondict = json.load(open(jsondict_file, 'r'))
 
         self.labelmap = {}
@@ -37,18 +42,21 @@ class RelationTSVDataset(TSVYamlDataset):
         self.class_to_ind['__background__'] = 0
         self.ind_to_class = {v:k for k, v in self.class_to_ind.items()}
         self.labelmap['class_to_ind'] = self.class_to_ind
+        self.classes = sort_key_by_val(self.class_to_ind)
 
         if self.attribute_on:
             self.attribute_to_ind = jsondict['attribute_to_idx']
             self.attribute_to_ind['__no_attribute__'] = 0
             self.ind_to_attribute = {v:k for k, v in self.attribute_to_ind.items()}
             self.labelmap['attribute_to_ind'] = self.attribute_to_ind
+            self.attributes = sort_key_by_val(self.attribute_to_ind)
 
         if self.relation_on:
             self.relation_to_ind = jsondict['predicate_to_idx']
             self.relation_to_ind['__no_relation__'] = 0
             self.ind_to_relation = {v:k for k, v in self.relation_to_ind.items()}
             self.labelmap['relation_to_ind'] = self.relation_to_ind
+            self.relations = sort_key_by_val(self.relation_to_ind)
         
         if self.is_load_label or self.detector_pre_calculated:
             self.label_loader = LabelLoader(

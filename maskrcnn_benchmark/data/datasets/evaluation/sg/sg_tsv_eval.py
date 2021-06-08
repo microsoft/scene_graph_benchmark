@@ -120,18 +120,18 @@ def evaluate(gt_classes, gt_boxes, gt_rels,
         return (None, None)
 
     rel_sum = ((gt_rels.sum(1) > 0).int() + (gt_rels.sum(0) > 0).int())
-    ix_w_rel = rel_sum.nonzero().numpy().squeeze()
+    ix_w_rel = rel_sum.nonzero(as_tuple=False).numpy().squeeze()
 
     # label = (((gt_rel_label.sum(1) == 0).int() + (gt_rel_label.sum(0) == 0).int()) == 2)
-    # change_ix = label.nonzero()
+    # change_ix = label.nonzero(as_tuple=False)
 
     gt_boxes = gt_boxes.numpy()
     num_gt_boxes = gt_boxes.shape[0]
-    gt_relations = gt_rels.nonzero().numpy()
+    gt_relations = gt_rels.nonzero(as_tuple=False).numpy()
     gt_classes = gt_classes.view(-1, 1).numpy()
 
     gt_rels_view = gt_rels.contiguous().view(-1)
-    gt_pred_labels = gt_rels_view[gt_rels_view.nonzero().squeeze()].contiguous().view(-1, 1).numpy()
+    gt_pred_labels = gt_rels_view[gt_rels_view.nonzero(as_tuple=False).squeeze()].contiguous().view(-1, 1).numpy()
 
     num_gt_relations = gt_relations.shape[0]
     if num_gt_relations == 0:

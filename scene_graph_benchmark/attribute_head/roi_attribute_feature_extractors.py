@@ -15,6 +15,10 @@ registry.ROI_ATTRIBUTE_FEATURE_EXTRACTORS.register(
     "FPNXconv1fcFeatureExtractor", FPNXconv1fcFeatureExtractor
 )
 
+registry.ROI_ATTRIBUTE_FEATURE_EXTRACTORS.register(
+    "ViTHeadFeatureExtractor", ViTHeadFeatureExtractor
+)
+
 
 def make_roi_attribute_feature_extractor(cfg, in_channels):
     func = registry.ROI_ATTRIBUTE_FEATURE_EXTRACTORS[

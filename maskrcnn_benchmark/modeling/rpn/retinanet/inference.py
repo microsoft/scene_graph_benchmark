@@ -103,7 +103,7 @@ class RetinaNetPostProcessor(RPNPostProcessor):
                     per_box_cls.topk(per_pre_nms_top_n, sorted=False)
 
             per_candidate_nonzeros = \
-                    per_candidate_inds.nonzero()[top_k_indices, :]
+                    per_candidate_inds.nonzero(as_tuple=False)[top_k_indices, :]
 
             per_box_loc = per_candidate_nonzeros[:, 0]
             per_class = per_candidate_nonzeros[:, 1]
@@ -138,7 +138,7 @@ class RetinaNetPostProcessor(RPNPostProcessor):
             result = []
             # skip the background
             for j in range(1, self.num_classes):
-                inds = (labels == j).nonzero().view(-1)
+                inds = (labels == j).nonzero(as_tuple=False).view(-1)
 
                 scores_j = scores[inds]
                 boxes_j = boxes[inds, :].view(-1, 4)
@@ -167,7 +167,7 @@ class RetinaNetPostProcessor(RPNPostProcessor):
                     number_of_detections - self.fpn_post_nms_top_n + 1
                 )
                 keep = cls_scores >= image_thresh.item()
-                keep = torch.nonzero(keep).squeeze(1)
+                keep = torch.nonzero(keep, as_tuple=False).squeeze(1)
                 result = result[keep]
             results.append(result)
         return results

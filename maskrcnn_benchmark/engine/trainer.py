@@ -13,8 +13,8 @@ from maskrcnn_benchmark.data import make_data_loader
 from maskrcnn_benchmark.utils.comm import get_world_size, synchronize
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from maskrcnn_benchmark.engine.inference import inference
+from maskrcnn_benchmark.utils.amp import autocast, GradScaler
 
-from apex import amp
 
 def reduce_loss_dict(loss_dict):
     """
@@ -63,6 +63,9 @@ def do_train(
     start_training_time = time.time()
     end = time.time()
 
+    if cfg.SOLVER.USE_AMP:
+        scaler = GradScaler()
+
     iou_types = ("bbox",)
     if cfg.MODEL.MASK_ON:
         iou_types = iou_types + ("segm",)
@@ -84,7 +87,11 @@ def do_train(
         images = images.to(device)
         # targets = [target.to(device) for target in targets]
 
-        loss_dict = model(images, targets)
+        if cfg.SOLVER.USE_AMP:
+            with autocast():
+                loss_dict = model(images, targets)
+        else:
+            loss_dict = model(images, targets)
 
         # take care of additional metric besides loss returned from model
         if type(loss_dict) == tuple:
@@ -101,12 +108,13 @@ def do_train(
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
-        # # Note: If mixed precision is not used, this ends up doing nothing
-        # # Otherwise apply loss scaling for mixed-precision recipe
-        # with amp.scale_loss(losses, optimizer) as scaled_losses:
-        #     scaled_losses.backward()
-        losses.backward()
-        optimizer.step()
+        if cfg.SOLVER.USE_AMP:
+            scaler.scale(losses).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            losses.backward()
+            optimizer.step()
         scheduler.step()
 
         batch_time = time.time() - end
@@ -116,7 +124,7 @@ def do_train(
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
-        if iteration % 1 == 0 or iteration == max_iter:
+        if iteration % cfg.LOG_LOSS_PERIOD == 0 or iteration == max_iter:
             logger.info(
                 meters.delimiter.join(
                     [

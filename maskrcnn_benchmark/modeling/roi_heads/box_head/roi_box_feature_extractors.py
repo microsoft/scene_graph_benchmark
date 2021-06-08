@@ -9,6 +9,7 @@ from maskrcnn_benchmark.modeling.backbone import resnet
 from maskrcnn_benchmark.modeling.poolers import Pooler
 from maskrcnn_benchmark.modeling.make_layers import group_norm
 from maskrcnn_benchmark.modeling.make_layers import make_fc
+from maskrcnn_benchmark.modeling.backbone.msvit import ViTHead
 
 
 @registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet50Conv5ROIFeatureExtractor")
@@ -155,6 +156,41 @@ class FPNXconv1fcFeatureExtractor(nn.Module):
         x = self.xconvs(x)
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc6(x))
+        return x
+
+
+@registry.ROI_BOX_FEATURE_EXTRACTORS.register("ViTHeadFeatureExtractor")
+class ViTHeadFeatureExtractor(nn.Module):
+    def __init__(self, config, in_channels):
+        super(ViTHeadFeatureExtractor, self).__init__()
+
+        resolution = config.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION
+        scales = config.MODEL.ROI_BOX_HEAD.POOLER_SCALES
+        sampling_ratio = config.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
+        pooler = Pooler(
+            output_size=(resolution, resolution),
+            scales=scales,
+            sampling_ratio=sampling_ratio,
+        )
+
+        # VIT head
+        args = dict(
+            input_size=config.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION,
+            drop_rate=config.MODEL.TRANSFORMER.DROP,
+            drop_path_rate=config.MODEL.TRANSFORMER.DROP_PATH,
+            norm_embed=config.MODEL.TRANSFORMER.NORM_EMBED,
+            layer_cfgstr=config.MODEL.TRANSFORMER.VITHEADARCH,
+            ln_eps=config.MODEL.TRANSFORMER.MSVIT.LN_EPS,
+        )
+        head = ViTHead(in_dim=in_channels, **args)
+
+        self.pooler = pooler
+        self.head = head
+        self.out_channels = head.out_channels
+
+    def forward(self, x, proposals):
+        x = self.pooler(x, proposals)
+        x = self.head(x)
         return x
 
 

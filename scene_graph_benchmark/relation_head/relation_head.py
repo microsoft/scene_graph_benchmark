@@ -98,13 +98,13 @@ class ROIRelationHead(torch.nn.Module):
             proposal_label_pairs = torch.cat(
                 (label_subj.view(-1, 1), label_obj.view(-1, 1)), 1)
 
-            keep_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero().view(-1)
+            keep_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero(as_tuple=False).view(-1)
 
             # if we filter non overlap bounding boxes
             if self.cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
                 ious = boxlist_iou(proposals_per_image, proposals_per_image).view(-1)
                 ious = ious[keep_idx]
-                keep_idx = keep_idx[(ious > 0).nonzero().view(-1)]
+                keep_idx = keep_idx[(ious > 0).nonzero(as_tuple=False).view(-1)]
             proposal_idx_pairs = proposal_idx_pairs[keep_idx]
             proposal_box_pairs = proposal_box_pairs[keep_idx]
             proposal_label_pairs = proposal_label_pairs[keep_idx]

@@ -178,6 +178,8 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 2000
 _C.MODEL.RPN.FPN_POST_NMS_PER_BATCH = True
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
+# use gt target box as proposals for roi_heads (shared in training and testing)
+_C.MODEL.RPN.FORCE_BOXES = False
 
 
 # ---------------------------------------------------------------------------- #
@@ -302,6 +304,28 @@ _C.MODEL.RESNETS.STAGE_WITH_DCN = (False, False, False, False)
 _C.MODEL.RESNETS.WITH_MODULATED_DCN = False
 _C.MODEL.RESNETS.DEFORMABLE_GROUPS = 1
 
+# ---------------------------------------------------------------------------- #
+# Vision Transformer Options
+# ---------------------------------------------------------------------------- #
+_C.MODEL.TRANSFORMER = CN()
+_C.MODEL.TRANSFORMER.DROP = 0.0
+_C.MODEL.TRANSFORMER.DROP_PATH = 0.1
+_C.MODEL.TRANSFORMER.NORM_EMBED = True
+_C.MODEL.TRANSFORMER.AVG_POOL = False
+_C.MODEL.TRANSFORMER.VITHEADARCH = 'l4,h12,d768,n1,s0,g0,p2,f7,a0'
+
+_C.MODEL.TRANSFORMER.MSVIT = CN()
+_C.MODEL.TRANSFORMER.MSVIT.ARCH = 'l1,h3,d96,n1,s1,g1,p4,f7,a0_l2,h3,d192,n2,s1,g1,p2,f7,a0_l3,h6,d384,n8,s1,g1,p2,f7,a0_l4,h12,d768,n1,s1,g0,p2,f7,a0'
+_C.MODEL.TRANSFORMER.MSVIT.SHARE_W = True
+_C.MODEL.TRANSFORMER.MSVIT.ATTN_TYPE = 'longformerhand'
+_C.MODEL.TRANSFORMER.MSVIT.SHARE_KV = True
+_C.MODEL.TRANSFORMER.MSVIT.ONLY_GLOBAL = False
+_C.MODEL.TRANSFORMER.MSVIT.SW_EXACT = 0
+_C.MODEL.TRANSFORMER.MSVIT.LN_EPS = 1e-6
+_C.MODEL.TRANSFORMER.MSVIT.MODE = 0
+_C.MODEL.TRANSFORMER.MSVIT.REDRAW_INTERVAL = 1000
+
+_C.MODEL.TRANSFORMER.OUT_FEATURES = []
 
 # ---------------------------------------------------------------------------- #
 # RetinaNet Options (Follow the Detectron version)
@@ -430,6 +454,15 @@ _C.SOLVER.TEST_PERIOD = 0
 # see 2 images per batch
 _C.SOLVER.IMS_PER_BATCH = 16
 
+_C.SOLVER.USE_AMP = False
+
+_C.SOLVER.OPTIMIZER = 'SGD' # also support ADAMW
+_C.SOLVER.CLIP_GRADIENTS = CN()
+_C.SOLVER.CLIP_GRADIENTS.ENABLED = False
+_C.SOLVER.CLIP_GRADIENTS.CLIP_TYPE = "full_model"
+_C.SOLVER.CLIP_GRADIENTS.CLIP_VALUE = 1.0
+_C.SOLVER.CLIP_GRADIENTS.NORM_TYPE = 2.0
+
 # ---------------------------------------------------------------------------- #
 # Specific test options
 # ---------------------------------------------------------------------------- #
@@ -487,6 +520,7 @@ _C.TEST.IGNORE_BOX_REGRESSION = False
 _C.OUTPUT_DIR = "."
 _C.DATA_DIR = "./datasets"
 _C.DISTRIBUTED_BACKEND = "nccl"  # could be "nccl", "gloo" or "mpi"
+_C.LOG_LOSS_PERIOD = 20
 
 _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
 
@@ -496,6 +530,3 @@ _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
 
 # Precision of input, allowable: (float32, float16)
 _C.DTYPE = "float32"
-
-# Enable verbosity in apex.amp
-_C.AMP_VERBOSE = False

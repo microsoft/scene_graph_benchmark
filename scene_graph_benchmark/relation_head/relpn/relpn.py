@@ -46,7 +46,7 @@ class RelPN(nn.Module):
                 match_ij = ((match_i + match_j) / 2)
                 # rmeove duplicate index
                 match_ij = match_ij.view(-1) # [::match_quality_matrix.shape[1]] = 0
-                # non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero().view(-1).to(match_ij.device)
+                # non_duplicate_idx = (torch.eye(match_ij.shape[0]).view(-1) == 0).nonzero(as_tuple=False).view(-1).to(match_ij.device)
                 # match_ij = match_ij[non_duplicate_idx]
                 temp.append(match_ij)
                 boxi = target.bbox[i]; boxj = target.bbox[j]
@@ -68,7 +68,7 @@ class RelPN(nn.Module):
         idx_obj = torch.arange(box_obj.shape[0]).view(1, -1, 1).repeat(box_subj.shape[0], 1, 1).to(proposal.bbox.device)
         proposal_idx_pairs = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
-        # non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero()
+        # non_duplicate_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero(as_tuple=False)
         # proposal_box_pairs = proposal_box_pairs[non_duplicate_idx.view(-1)]
         # proposal_idx_pairs = proposal_idx_pairs[non_duplicate_idx.view(-1)]
 
@@ -184,13 +184,13 @@ class RelPN(nn.Module):
             idx_obj = torch.arange(box_obj.shape[0]).view(1, -1, 1).repeat(box_subj.shape[0], 1, 1).to(proposals_per_image.bbox.device)
             proposal_idx_pairs = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
-            keep_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero().view(-1)
+            keep_idx = (proposal_idx_pairs[:, 0] != proposal_idx_pairs[:, 1]).nonzero(as_tuple=False).view(-1)
 
             # if we filter non overlap bounding boxes
             if self.cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
                 ious = boxlist_iou(proposals_per_image, proposals_per_image).view(-1)
                 ious = ious[keep_idx]
-                keep_idx = keep_idx[(ious > 0).nonzero().view(-1)]
+                keep_idx = keep_idx[(ious > 0).nonzero(as_tuple=False).view(-1)]
             proposal_idx_pairs = proposal_idx_pairs[keep_idx]
             proposal_box_pairs = proposal_box_pairs[keep_idx]
             proposal_pairs_per_image = BoxPairList(proposal_box_pairs, proposals_per_image.size, proposals_per_image.mode)
@@ -212,11 +212,11 @@ class RelPN(nn.Module):
             obj_logits = proposals_per_image.get_field('scores_all')
             obj_bboxes = proposals_per_image.bbox
             relness = self.relationshipness(obj_logits, obj_bboxes, proposals_per_image.size)
-            keep_idx = (1 - torch.eye(obj_logits.shape[0]).to(relness.device)).view(-1).nonzero().view(-1)
+            keep_idx = (1 - torch.eye(obj_logits.shape[0]).to(relness.device)).view(-1).nonzero(as_tuple=False).view(-1)
             if self.cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
                 ious = boxlist_iou(proposals_per_image, proposals_per_image).view(-1)
                 ious = ious[keep_idx]
-                keep_idx = keep_idx[(ious > 0).nonzero().view(-1)]
+                keep_idx = keep_idx[(ious > 0).nonzero(as_tuple=False).view(-1)]
             relness = relness.view(-1)[keep_idx]
             relness_sorted, order = torch.sort(relness.view(-1), descending=True)
 
@@ -266,7 +266,7 @@ class RelPN(nn.Module):
         proposals = self._proposal_pairs
         labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
 
-        rel_fg_cnt = len(labels.nonzero())
+        rel_fg_cnt = len(labels.nonzero(as_tuple=False))
         rel_bg_cnt = labels.shape[0] - rel_fg_cnt
         ce_weights = labels.new(class_logits.size(1)).fill_(1).float()
         ce_weights[0] = float(rel_fg_cnt) / (rel_bg_cnt + 1e-5)

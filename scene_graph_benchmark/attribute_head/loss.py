@@ -48,9 +48,9 @@ class AttributeRCNNLossComputation(object):
         # prepare attribute targets
         sim_attributes = attribute_logits.new(attribute_logits.size()).zero_()
         for i in range(len(attributes)):
-            if len(torch.nonzero(attributes[i])) > 0:
-                sim_attributes[i][attributes[i][torch.nonzero(attributes[i])].long()] = 1.0 / len(
-                    torch.nonzero(attributes[i]))
+            if len(torch.nonzero(attributes[i], as_tuple=False)) > 0:
+                sim_attributes[i][attributes[i][torch.nonzero(attributes[i], as_tuple=False)].long()] = 1.0 / len(
+                    torch.nonzero(attributes[i], as_tuple=False))
         # TODO: do we need to ignore the all zero vector?
         attribute_loss = self.cross_entropy(attribute_logits, sim_attributes, loss_type="softmax")
 

@@ -28,9 +28,13 @@ INPUT:
     MAX_SIZE_TEST: 1000
     PIXEL_MEAN: [103.530, 116.280, 123.675]
 DATASETS:
-    FACTORY_TEST: ("ODTSVDataset",)
-    TEST: ("flickr30k/tsv/flickr30k.yaml",)
+#    FACTORY_TEST: ("ODTSVDataset",)
+#    TEST: ("flickr30k/tsv/flickr30k.yaml",)
     LABELMAP_FILE: "visualgenome/VG-SGG-dicts-vgoi6-clipped.json"
+    TRAIN: ("visualgenome/train_vgoi6_clipped.yaml",)
+    TEST: ("visualgenome/test_vgoi6_clipped.yaml",)
+    FACTORY_TRAIN: ("VGTSVDataset",)
+    FACTORY_TEST: ("VGTSVDataset",)
 DATALOADER:
     NUM_WORKERS: 0
 SOLVER:
