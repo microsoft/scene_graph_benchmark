@@ -135,7 +135,7 @@ class KeypointRCNNLossComputation(object):
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
             zip(sampled_pos_inds, sampled_neg_inds)
         ):
-            img_sampled_inds = torch.nonzero(pos_inds_img).squeeze(1)
+            img_sampled_inds = torch.nonzero(pos_inds_img, as_tuple=False).squeeze(1)
             proposals_per_image = proposals[img_idx][img_sampled_inds]
             proposals[img_idx] = proposals_per_image
 
@@ -155,7 +155,7 @@ class KeypointRCNNLossComputation(object):
 
         keypoint_targets = cat(heatmaps, dim=0)
         valid = cat(valid, dim=0).to(dtype=torch.bool)
-        valid = torch.nonzero(valid).squeeze(1)
+        valid = torch.nonzero(valid, as_tuple=False).squeeze(1)
 
         # torch.mean (in binary_cross_entropy_with_logits) does'nt
         # accept empty tensors, so handle it sepaartely

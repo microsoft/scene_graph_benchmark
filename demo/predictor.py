@@ -273,7 +273,7 @@ class COCODemo(object):
                 the BoxList via `prediction.fields()`
         """
         scores = predictions.get_field("scores")
-        keep = torch.nonzero(scores > self.confidence_threshold).squeeze(1)
+        keep = torch.nonzero(scores > self.confidence_threshold, as_tuple=False).squeeze(1)
         predictions = predictions[keep]
         scores = predictions.get_field("scores")
         _, idx = scores.sort(0, descending=True)

@@ -1,7 +1,7 @@
 ARG CUDA="10.1"
 ARG CUDNN="7"
 
-FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu16.04
+FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
@@ -36,20 +36,20 @@ RUN pip --no-cache-dir install --force-reinstall -I pyyaml
 
 RUN python -m nltk.downloader punkt
 
-# Install latest PyTorch 1.4
+# Install latest PyTorch 1.7.1
 ARG CUDA
-RUN conda install pytorch~=1.4.0 torchvision cudatoolkit=${CUDA} -c pytorch \
+RUN conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.1 -c pytorch \
  && conda clean -ya
+RUN conda install -y -c conda-forge timm einops
 
 # install pycocotools
-RUN git clone https://github.com/cocodataset/cocoapi.git \
- && cd cocoapi/PythonAPI \
- && python setup.py build_ext install
+# RUN git clone https://github.com/cocodataset/cocoapi.git \
+#  && cd cocoapi/PythonAPI \
+#  && python setup.py build_ext install
+RUN conda install -y -c conda-forge pycocotools
 
-# install apex
-RUN git clone https://github.com/NVIDIA/apex.git \
- && cd apex \
- && python setup.py install --cuda_ext --cpp_ext
+# install cityscapesScripts
+RUN python -m pip install cityscapesscripts
 
 # install PyTorch Detection
 ARG FORCE_CUDA="1"
@@ -61,7 +61,7 @@ RUN echo """syntax on\nfiletype indent on\nset autoindent\nset number\ncolorsche
 
 CMD [ "zsh" ]
 
-# RUN git clone https://github.com/hanxiaotian/scene_graph_benchmark.git \
+# RUN git clone https://github.com/microsoft/scene_graph_benchmark.git \
 #  && cd scene_graph_benchmark \
 #  && python setup.py build develop
 

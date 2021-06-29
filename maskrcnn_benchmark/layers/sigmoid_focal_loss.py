@@ -57,7 +57,6 @@ class SigmoidFocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, logits, targets):
-        device = logits.device
         if logits.is_cuda:
             loss_func = sigmoid_focal_loss_cuda
         else:

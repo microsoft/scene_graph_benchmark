@@ -83,7 +83,7 @@ class MaskRCNNLossComputation(object):
             labels_per_image[neg_inds] = 0
 
             # mask scores are only computed on positive samples
-            positive_inds = torch.nonzero(labels_per_image > 0).squeeze(1)
+            positive_inds = torch.nonzero(labels_per_image > 0, as_tuple=False).squeeze(1)
 
             segmentation_masks = matched_targets.get_field("masks")
             segmentation_masks = segmentation_masks[positive_inds]
@@ -114,7 +114,7 @@ class MaskRCNNLossComputation(object):
         labels = cat(labels, dim=0)
         mask_targets = cat(mask_targets, dim=0)
 
-        positive_inds = torch.nonzero(labels > 0).squeeze(1)
+        positive_inds = torch.nonzero(labels > 0, as_tuple=False).squeeze(1)
         labels_pos = labels[positive_inds]
 
         # torch.mean (in binary_cross_entropy_with_logits) doesn't

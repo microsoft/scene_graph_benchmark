@@ -1,7 +1,6 @@
 MODEL:
     META_ARCHITECTURE: "GeneralizedRCNN"
     WEIGHT: "pretrained_model/RX152FPN_reldn_oi_best.pth"
-    # WEIGHT: "/home/xiaothan/c/Users/xiaothan/Downloads/frcnn_x152fpn_4sets.yaml_pos0.5_lr0.005_bsz16.pth"
     USE_FREQ_PRIOR: False
     FREQ_PRIOR: "openimages_v5c/vrd/vrd_frequency_prior_include_background.npy"
     BACKBONE:

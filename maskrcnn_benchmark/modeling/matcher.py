@@ -101,7 +101,7 @@ class Matcher(object):
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
         gt_pred_pairs_of_highest_quality = torch.nonzero(
-            match_quality_matrix == highest_quality_foreach_gt[:, None]
+            match_quality_matrix == highest_quality_foreach_gt[:, None], as_tuple=False
         )
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
