@@ -215,12 +215,13 @@ free to open a new issue.
 ## Citations
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry requires the `url` LaTeX package.
 ```
-@misc{han2021sgbenchmark,
-author = {Xiaotian Han and Jianwei Yang and Houdong Hu and Lei Zhang and Pengchuan Zhang},
-title = {{Scene Graph Benchmark}},
-year = {2021},
-howpublished = {\url{https://github.com/microsoft/scene_graph_benchmark}},
-note = {Accessed: [Insert date here]}
+@misc{han2021image,
+      title={Image Scene Graph Generation (SGG) Benchmark}, 
+      author={Xiaotian Han and Jianwei Yang and Houdong Hu and Lei Zhang and Jianfeng Gao and Pengchuan Zhang},
+      year={2021},
+      eprint={2107.12604},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
 }
 
 ```

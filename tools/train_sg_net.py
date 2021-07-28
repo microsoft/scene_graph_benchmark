@@ -113,6 +113,44 @@ def train(cfg, local_rank, distributed):
     return model
 
 
+def run_test(cfg, model, distributed):
+    if distributed:
+        model = model.module
+    torch.cuda.empty_cache()  # TODO check if it helps
+    iou_types = ("bbox",)
+    if cfg.MODEL.MASK_ON:
+        iou_types = iou_types + ("segm",)
+    if cfg.MODEL.KEYPOINT_ON:
+        iou_types = iou_types + ("keypoints",)
+    output_folders = [None] * len(cfg.DATASETS.TEST)
+    dataset_names = cfg.DATASETS.TEST
+    if cfg.OUTPUT_DIR:
+        for idx, dataset_name in enumerate(dataset_names):
+            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+            mkdir(output_folder)
+            output_folders[idx] = output_folder
+    data_loaders_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
+    labelmap_file = config_dataset_file(cfg.DATA_DIR, cfg.DATASETS.LABELMAP_FILE)
+    for output_folder, dataset_name, data_loader_val in zip(output_folders, dataset_names, data_loaders_val):
+        inference(
+            model,
+            cfg,
+            data_loader_val,
+            dataset_name=dataset_name,
+            iou_types=iou_types,
+            box_only=False if cfg.MODEL.RETINANET_ON else cfg.MODEL.RPN_ONLY,
+            bbox_aug=cfg.TEST.BBOX_AUG.ENABLED,
+            device=cfg.MODEL.DEVICE,
+            expected_results=cfg.TEST.EXPECTED_RESULTS,
+            expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
+            output_folder=output_folder,
+            skip_performance_eval=cfg.TEST.SKIP_PERFORMANCE_EVAL,
+            labelmap_file=labelmap_file,
+            save_predictions=cfg.TEST.SAVE_PREDICTIONS,
+        )
+        synchronize()
+
+
 def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
     parser.add_argument(

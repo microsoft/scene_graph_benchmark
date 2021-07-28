@@ -10,13 +10,13 @@ All the following models are inferenced using unconstraint method, the detection
 
 model | recall@50 | wmAP(Triplet) | mAP(Triplet) | wmAP(Phrase) | mAP(Phrase) | Triplet proposal recall | Phrase proposal recall | model | config
 -----------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:
-IMP, no bias | 71.64 | 30.56 | 36.47 | 32.90 | 40.61 | 72.57 | 75.87 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_imp_nobias.pth) | [link](sgg_configs/oi_vrd/R152FPN_imp_nobias_oi.yaml)
-IMP, bias | 71.81 | 30.88 | 45.97 | 33.25 | 50.42 | 72.81 | 76.04 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_imp_bias.pth) | [link](sgg_configs/oi_vrd/R152FPN_imp_bias_oi.yaml)
-MSDN, no bias | 71.76 | 30.40 | 36.76 | 32.81 | 40.89 | 72.54 | 75.85 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_msdn_nobias.pth) | [link](sgg_configs/oi_vrd/R152FPN_msdn_nobias_oi.yaml)
-MSDN, bias | 71.48 | 30.22 | 34.49 | 32.58 | 38.71 | 72.45 | 75.62 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_msdn_bias.pth) | [link](sgg_configs/oi_vrd/R152FPN_msdn_bias_oi.yaml)
-Neural Motif, bias | 72.54 | 29.35 | 29.26 | 33.10 | 35.02 | 73.64 | 78.70 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_nm.pth) | [link](sgg_configs/oi_vrd/R152FPN_motif_oi.yaml)
-GRCNN, bias | 74.17 | 34.73 | 39.56 | 37.04 | 43.63 | 74.11 | 77.32 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_grcnn.pth) | [link](sgg_configs/oi_vrd/R152FPN_grcnn_oi.yaml)
-RelDN | 75.40 | 40.85 | 44.24 | 49.16 | 50.60 | 78.74 | 90.39 | [link](https://penzhanwu2.blob.core.windows.net/phillytools/data/maskrcnn/pretrained_model/sgg_model_zoo/oi_R152_reldn.pth) | [link](sgg_configs/oi_vrd/R152FPN_reldn_oi.yaml)
+IMP, no bias | 71.64 | 30.56 | 36.47 | 32.90 | 40.61 | 72.57 | 75.87 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_imp_nobias.pth) | [link](sgg_configs/oi_vrd/R152FPN_imp_nobias_oi.yaml)
+IMP, bias | 71.81 | 30.88 | 45.97 | 33.25 | 50.42 | 72.81 | 76.04 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_imp_bias.pth) | [link](sgg_configs/oi_vrd/R152FPN_imp_bias_oi.yaml)
+MSDN, no bias | 71.76 | 30.40 | 36.76 | 32.81 | 40.89 | 72.54 | 75.85 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_msdn_nobias.pth) | [link](sgg_configs/oi_vrd/R152FPN_msdn_nobias_oi.yaml)
+MSDN, bias | 71.48 | 30.22 | 34.49 | 32.58 | 38.71 | 72.45 | 75.62 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_msdn_bias.pth) | [link](sgg_configs/oi_vrd/R152FPN_msdn_bias_oi.yaml)
+Neural Motif, bias | 72.54 | 29.35 | 29.26 | 33.10 | 35.02 | 73.64 | 78.70 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_nm.pth) | [link](sgg_configs/oi_vrd/R152FPN_motif_oi.yaml)
+GRCNN, bias | 74.17 | 34.73 | 39.56 | 37.04 | 43.63 | 74.11 | 77.32 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_grcnn.pth) | [link](sgg_configs/oi_vrd/R152FPN_grcnn_oi.yaml)
+RelDN | 75.40 | 40.85 | 44.24 | 49.16 | 50.60 | 78.74 | 90.39 | [link](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/sgg_model_zoo/oi_R152_reldn.pth) | [link](sgg_configs/oi_vrd/R152FPN_reldn_oi.yaml)
 
 
 ### Visual Genome
