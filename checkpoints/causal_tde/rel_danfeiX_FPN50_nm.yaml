@@ -73,12 +73,12 @@ SOLVER:
   CHECKPOINT_PERIOD: 5000
 TEST:
   IMS_PER_BATCH: 4
-  SAVE_PREDICTIONS: TRUE
+  SAVE_PREDICTIONS: True
   SAVE_RESULTS_TO_TSV: True
   TSV_SAVE_SUBSET: ['rect', 'class', 'conf', 'relations', 'relation_scores', 'relation_scores_all']
   GATHER_ON_CPU: True
   SKIP_PERFORMANCE_EVAL: False
-  OUTPUT_RELATION_FEATURE: False
+  OUTPUT_RELATION_FEATURE: True
   OUTPUT_FEATURE: True # need this to output scores_all and box_all
 OUTPUT_DIR: "custom_images/SGs"
 DATA_DIR: "data/VG/"
