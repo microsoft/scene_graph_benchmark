@@ -1,7 +1,7 @@
 # Scene Graph Benchmark in PyTorch 1.7.1
 
 
-## Setup (for first-time use)
+## 1. Setup for first-time use (Docker)
 #### Author: Francesco Maria Turno
 
 - Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git`
@@ -24,6 +24,11 @@ Inside Docker:
   
 *Output test image can be found in directory:* `custom_images/francesco_example/3_out.jpg`
 
+## 2. Generate Scene Graphs from custom images:
+
+### Work in progress
+
+*Currently studying where output SGs are generated...*
 
 
 
