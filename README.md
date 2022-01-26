@@ -28,7 +28,7 @@ Inside Docker:
 
 ### Work in progress
 
-*Currently studying where output SGs are generated...*
+*Currently studying HOW and WHERE output SGs are generated...*
 
 Check [mini_tsv](https://github.com/AU-Nebula/scene_graph_benchmark/tree/main/tools/mini_tsv) README 
 
