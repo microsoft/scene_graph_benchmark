@@ -15,7 +15,7 @@ Outside Docker:
 - Download *Visual Genome* metadata: `sh custom_files/download_VG.sh`
 - Download pre-trained model: `sh custom_files/download_pretrained.sh`
 
-*This operation might take a while... Make youself a coffee!"*
+*This operation might take a while... Make yourself a coffee!*
 
 Inside Docker:
 
@@ -23,7 +23,7 @@ Inside Docker:
   
 *Output test image can be found in directory:* `custom_images/francesco_example/3_out.jpg`
 
-## 2. Generate Scene Graphs from custom images:
+## 2. Generate Scene Graphs from custom images
 
 ### Work in progress
 
