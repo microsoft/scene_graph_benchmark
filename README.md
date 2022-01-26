@@ -1,4 +1,31 @@
-# Scene Graph Benchmark in PyTorch 1.7
+# Scene Graph Benchmark in PyTorch 1.7.1
+
+
+## Setup (for first-time use)
+#### Author: Francesco Maria Turno
+
+- Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git`
+- Download NVIDIA Docker image: `docker pull nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
+- Build Docker image: `docker build -t nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04 .`
+- Run it: `docker run -it -v $PWD:/kern-nemesis --gpus all nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
+- Activate *conda* environment: `conda acitvate kern_nemesis`
+- Compile `maskrcnn_benchmark`: `python setup.py build develop`
+
+Outside Docker:
+
+- Download *Visual Genome* metadata: `sh custom_files/download_VG.sh`
+- Download pre-trained model: `sh custom_files/download_pretrained.sh`
+
+*This operation might take a while... Make youself a coffee!" 
+
+Inside Docker:
+
+- Test model: `run custom_files/run_validation.test.sh`
+  
+*Output test image can be found in directory:* `custom_images/francesco_example/3_out.jpg`
+
+
+
 
 **This project is based on [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark)**
 
