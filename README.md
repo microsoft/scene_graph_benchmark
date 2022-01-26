@@ -33,7 +33,7 @@ Inside Docker:
 
 
 ## Highlights
-- **Upgrad to pytorch 1.7**
+- **Upgrade to pytorch 1.7.1**
 - **Multi-GPU training and inference**
 - **Batched inference:** can perform inference using multiple images per batch per GPU.
 - **Fast and flexible tsv dataset format**
