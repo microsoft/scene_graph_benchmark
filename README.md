@@ -1,6 +1,8 @@
 # Scene Graph Benchmark in PyTorch 1.7.1
 
 
+## 0. Requirements
+
 ## 1. Setup for first-time use (Docker)
 
 - Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git SGB`
