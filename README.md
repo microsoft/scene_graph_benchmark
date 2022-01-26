@@ -8,7 +8,7 @@
 - Download NVIDIA Docker image: `docker pull nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
 - Build Docker image: `docker build -t nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04 .`
 - Run it: `docker run -it -v $PWD:/kern-nemesis --gpus all nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
-- Activate *conda* environment: `conda acitvate kern_nemesis`
+- Activate *conda* environment: `conda activate kern_nemesis`
 - Compile `maskrcnn_benchmark`: `python setup.py build develop`
 
 Outside Docker:
