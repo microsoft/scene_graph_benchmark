@@ -2,7 +2,6 @@
 
 
 ## 1. Setup for first-time use (Docker)
-#### Author: Francesco Maria Turno
 
 - Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git`
 - Download NVIDIA Docker image: `docker pull nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
@@ -38,7 +37,7 @@ Inside Docker:
 
 
 ## Highlights
-- **Upgrade to pytorch 1.7.1**
+- **Upgrade to Torch 1.7.1**
 - **Multi-GPU training and inference**
 - **Batched inference:** can perform inference using multiple images per batch per GPU.
 - **Fast and flexible tsv dataset format**
