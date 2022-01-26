@@ -30,6 +30,8 @@ Inside Docker:
 
 *Currently studying where output SGs are generated...*
 
+Check [mini_tsv](scene_graph_benchmark/tools/mini_tsv/) README 
+
 #
 
 **This project is based on [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark)**
