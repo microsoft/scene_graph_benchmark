@@ -3,7 +3,8 @@
 
 ## 1. Setup for first-time use (Docker)
 
-- Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git`
+- Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git SGB`
+- Change directory: `cd SGB`
 - Download NVIDIA Docker image: `docker pull nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
 - Build Docker image: `docker build -t nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04 .`
 - Run it: `docker run -it -v $PWD:/kern_nemesis --gpus all nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
