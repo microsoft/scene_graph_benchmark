@@ -19,7 +19,7 @@ Outside Docker:
 
 Inside Docker:
 
-- Test model: `run custom_files/run_validation.test.sh`
+- Test model: `sh custom_files/run_validation.test.sh`
   
 *Output test image can be found in directory:* `custom_images/francesco_example/3_out.jpg`
 
