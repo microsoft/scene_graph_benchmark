@@ -16,7 +16,7 @@ Outside Docker:
 - Download *Visual Genome* metadata: `sh custom_files/download_VG.sh`
 - Download pre-trained model: `sh custom_files/download_pretrained.sh`
 
-*This operation might take a while... Make youself a coffee!" 
+*This operation might take a while... Make youself a coffee!"*
 
 Inside Docker:
 
