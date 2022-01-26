@@ -30,7 +30,7 @@ Inside Docker:
 
 *Currently studying where output SGs are generated...*
 
-Check [mini_tsv](scene_graph_benchmark/tools/mini_tsv/) README 
+Check [mini_tsv](scene_graph_benchmark/tools/mini_tsv/README.md) README 
 
 #
 
