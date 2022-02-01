@@ -17,7 +17,7 @@ from maskrcnn_benchmark.data.datasets.utils.load_files import load_labelmap_file
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
 
 from tools.demo.detect_utils import detect_objects_on_single_image
-from tools.demo.visual_utils import draw_bb, draw_rel
+#from tools.demo.visual_utils import draw_bb, draw_rel
 
 
 def postprocess_attr(dataset_attr_labelmap, label_list, conf_list):
@@ -46,6 +46,7 @@ def postprocess_attr(dataset_attr_labelmap, label_list, conf_list):
         return list(zip(*sorted_dic))
     else:
         return [[], []]
+
 
 def restricted_float(x):
     try:
@@ -130,24 +131,6 @@ def main():
     if isinstance(model, SceneParser):
         rel_dets = dets['relations']
         dets = dets['objects']
-    
-    new_id = {}
-    dets_filtered = []
-    for i, d in enumerate(dets):
-        if d["conf"] >= args.filtering_trs:
-             new_id[i] = len(dets_filtered)
-             dets_filtered.append(d)
-    
-    rel_dets_filtered = []
-    for r in rel_dets:
-        if dets[r["subj_id"]]["conf"] >= args.filtering_trs and dets[r["obj_id"]]["conf"] >= args.filtering_trs:
-             new_r = r
-             new_r["subj_id"] = new_id[r["subj_id"]]
-             new_r["obj_id"] = new_id[r["obj_id"]]
-             rel_dets_filtered.append(new_r)
-
-    dets = dets_filtered
-    rel_dets = rel_dets_filtered
 
     for obj in dets:
         obj["class"] = dataset_labelmap[obj["class"]]
@@ -167,6 +150,7 @@ def main():
 
     rects = [d["rect"] for d in dets]
     scores = [d["conf"] for d in dets]
+
     if cfg.MODEL.ATTRIBUTE_ON and args.visualize_attr:
         attr_labels = [','.join(d["attr"]) for d in dets]
         attr_scores = [d["attr_conf"] for d in dets]
@@ -175,35 +159,42 @@ def main():
     else:
         labels = [d["class"] for d in dets]
 
-    draw_bb(cv2_img, rects, labels, scores)
+    #draw_bb(cv2_img, rects, labels, scores)
+    
+    graph = {"frame":args.img_file,
+             "nodes":[],
+             "edges":[],
+             "lighthouse":[]
+	    }
+    
+    accepted_nodes = set()
+    
+    for id,rect in enumerate(rects):
+        if scores[id] < args.filtering_trs:
+            continue
+        accepted_nodes.add(id)
+        node = {"id": id, "bb": rect, "kg_mapping":[], "class": [labels[id]], "confidence":[scores[id]], "expert": ["causal_tde"]}
+        graph["nodes"].append(node)
 
-    if cfg.MODEL.RELATION_ON and args.visualize_relation:
-        rel_subj_centers = [r['subj_center'] for r in rel_dets]
-        rel_obj_centers = [r['obj_center'] for r in rel_dets]
-        rel_scores = [r['conf'] for r in rel_dets]
-        rel_labels = [r['class'] for r in rel_dets]
-        draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
+    # merge(dets[rel['subj_id']]['rect'], dets[rel['obj_id']]['rect'])
+
+    for rel in rel_dets:
+        
+        if rel["subj_id"] in accepted_nodes and rel["obj_id"] in accepted_nodes:
+             edge = {"source": rel["subj_id"], "dest": rel["obj_id"], "bb": [], "class": [rel["class"]], "confidence": [rel["conf"]], "expert": ["causal_tde"]}
+             graph["edges"].append(edge)
 
     if not args.save_file:
-        save_file = op.splitext(args.img_file)[0] + "_output.jpg"
+        save_file = op.splitext(args.img_file)[0] + ".causal_tde.json"
     else:
         save_file = args.save_file
-    cv2.imwrite(save_file, cv2_img)
     print("save results to: {}".format(save_file))
 
-    # save results in text
-    #if cfg.MODEL.ATTRIBUTE_ON and args.visualize_attr:
-    #if cfg.MODEL.ATTRIBUTE_ON:
-        #result_str = ""
-        #for box, label, rel, score, attr_score in zip(rects, labels, rel_labels, scores, attr_scores):
-            #result_str += str(box) + label+'\n'
-            #result_str += ','.join([str(conf) for conf in attr_score])
-            #result_str += '\t'+str(score)+'\n'
-            #result_str += rel+'\n'
-        #text_save_file = op.splitext(save_file)[0] + '_output.txt'
-        #print(result_str)
-        #with open(text_save_file, "w") as fid:
-            #fid.write(result_str)
+    print(graph)
+
+    # save results in json format
+    with open(save_file, 'w') as f:
+        json.dump(graph, f, indent=4)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+--2022-01-28 10:19:32--  https://s3.us-west-2.amazonaws.com/secure.notion-static.com/d68323a5-5296-4bd1-91d1-b19617cfced1/download_LSMDC.sh?X-Amz-Algorithm=AWS4-HMAC-SHA256
+Resolving s3.us-west-2.amazonaws.com (s3.us-west-2.amazonaws.com)... 52.218.153.232
+Connecting to s3.us-west-2.amazonaws.com (s3.us-west-2.amazonaws.com)|52.218.153.232|:443... connected.
+HTTP request sent, awaiting response... 400 Bad Request
+2022-01-28 10:19:38 ERROR 400: Bad Request.
+
