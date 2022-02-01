@@ -1,15 +1,17 @@
 # Scene Graph Benchmark in PyTorch 1.7.1
 
+## 0. Prerequisites
+
+
 
 ## 1. Setup for first-time use (Docker)
 
 - Clone repository: `git clone https://github.com/AU-Nebula/scene_graph_benchmark.git SGB`
 - Change directory: `cd SGB`
 - Download NVIDIA Docker image: `docker pull nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
-- Build Docker image: `docker build -t nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04 .`
-- Run it: `docker run -it -v $PWD:/kern_nemesis --gpus all nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04`
-- Activate *conda* environment: `conda activate kern_nemesis`
-- Compile `maskrcnn_benchmark`: `python setup.py build develop`
+- Build Docker image: `docker build -t au/sgb:10.1-cudnn7-devel-ubuntu18.04-pip3 .`
+- Run it: `docker run -it -v $PWD:/kern_nemesis --gpus all au/sgb:10.1-cudnn7-devel-ubuntu18.04-pip3`
+- Build `maskrcnn_benchmark`: `python setup.py build develop`
 
 Outside Docker:
 
@@ -18,19 +20,9 @@ Outside Docker:
 
 *This operation might take a while... Make yourself a coffee!*
 
-Inside Docker:
-
-- Test model: `sh custom_files/run_validation.test.sh`
-  
-*Output test image can be found in directory:* `custom_images/francesco_example/3_out.jpg`
-
-## 2. Generate Scene Graphs from custom images
+## 2. Generate Scene Graphs with custom dataset
 
 ### Work in progress
-
-*Currently studying HOW and WHERE output SGs are generated...*
-
-Check [mini_tsv](https://github.com/AU-Nebula/scene_graph_benchmark/tree/main/tools/mini_tsv) README 
 
 #
 
