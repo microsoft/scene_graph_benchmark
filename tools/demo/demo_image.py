@@ -130,14 +130,14 @@ def main():
     if isinstance(model, SceneParser):
         rel_dets = dets['relations']
         dets = dets['objects']
-    
+
     new_id = {}
     dets_filtered = []
     for i, d in enumerate(dets):
         if d["conf"] >= args.filtering_trs:
              new_id[i] = len(dets_filtered)
              dets_filtered.append(d)
-    
+
     rel_dets_filtered = []
     for r in rel_dets:
         if dets[r["subj_id"]]["conf"] >= args.filtering_trs and dets[r["obj_id"]]["conf"] >= args.filtering_trs:
@@ -167,6 +167,7 @@ def main():
 
     rects = [d["rect"] for d in dets]
     scores = [d["conf"] for d in dets]
+    
     if cfg.MODEL.ATTRIBUTE_ON and args.visualize_attr:
         attr_labels = [','.join(d["attr"]) for d in dets]
         attr_scores = [d["attr_conf"] for d in dets]
@@ -177,15 +178,15 @@ def main():
 
     draw_bb(cv2_img, rects, labels, scores)
 
-    if cfg.MODEL.RELATION_ON and args.visualize_relation:
-        rel_subj_centers = [r['subj_center'] for r in rel_dets]
-        rel_obj_centers = [r['obj_center'] for r in rel_dets]
-        rel_scores = [r['conf'] for r in rel_dets]
-        rel_labels = [r['class'] for r in rel_dets]
-        draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
+    #if cfg.MODEL.RELATION_ON and args.visualize_relation:
+        #rel_subj_centers = [r['subj_center'] for r in rel_dets]
+        #rel_obj_centers = [r['obj_center'] for r in rel_dets]
+        #rel_scores = [r['conf'] for r in rel_dets]
+        #rel_labels = [r['class'] for r in rel_dets]
+        #draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
 
     if not args.save_file:
-        save_file = op.splitext(args.img_file)[0] + "_output.jpg"
+        save_file = op.splitext(args.img_file)[0] + "_annotated.jpg"
     else:
         save_file = args.save_file
     cv2.imwrite(save_file, cv2_img)

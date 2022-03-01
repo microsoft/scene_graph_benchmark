@@ -30,6 +30,8 @@ def postprocess_attr(dataset_attr_labelmap, label_list, conf_list):
     attr_dict = {}
     for label, conf in zip(label_list, conf_list):
         label = dataset_attr_labelmap[label]
+        label = label.strip()
+
         if label in common_attributes and conf < common_attributes_thresh:
             continue
         if label in attr_alias_dict:
@@ -134,11 +136,14 @@ def main():
 
     for obj in dets:
         obj["class"] = dataset_labelmap[obj["class"]]
+        obj["class"] = obj["class"].strip()
+    
     if visual_labelmap is not None:
         dets = [d for d in dets if d['class'] in visual_labelmap]
     if cfg.MODEL.ATTRIBUTE_ON and args.visualize_attr:
         for obj in dets:
             obj["attr"], obj["attr_conf"] = postprocess_attr(dataset_attr_labelmap, obj["attr"], obj["attr_conf"])
+
     if cfg.MODEL.RELATION_ON and args.visualize_relation:
         for rel in rel_dets:
             rel['class'] = dataset_relation_labelmap[rel['class']]
@@ -173,7 +178,7 @@ def main():
         if scores[id] < args.filtering_trs:
             continue
         accepted_nodes.add(id)
-        node = {"id": id, "bb": rect, "kg_mapping":[], "class": [labels[id]], "confidence":[scores[id]], "expert": ["causal_tde"]}
+        node = {"id": id, "bb": rect, "kg_mapping":[], "class": [labels[id].strip()], "confidence":[scores[id]], "expert": ["causal_tde"]}
         graph["nodes"].append(node)
 
     # merge(dets[rel['subj_id']]['rect'], dets[rel['obj_id']]['rect'])
