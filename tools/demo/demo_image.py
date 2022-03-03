@@ -71,8 +71,10 @@ def main():
                         help="visualize the object attributes")
     parser.add_argument("--visualize_relation", action="store_true",
                         help="visualize the relationships")
-    parser.add_argument("--filtering_trs", metavar="THRESHOLD", type=restricted_float,
-                    help="filtering treshold to filter objects and relationships generation")
+    parser.add_argument("--min_obj_score", metavar="OBJECTS THRESHOLD", type=restricted_float, default=0,
+                        help="threshold to filter objects generation")
+    parser.add_argument("--min_rel_score", metavar="RELATIONSHIPS THRESHOLD", type=restricted_float, default=0,
+                        help="threshold to filter relationships generation")
     parser.add_argument("opts", default=None, nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")
 
@@ -134,13 +136,15 @@ def main():
     new_id = {}
     dets_filtered = []
     for i, d in enumerate(dets):
-        if d["conf"] >= args.filtering_trs:
+        if d["conf"] >= args.min_obj_score:
              new_id[i] = len(dets_filtered)
              dets_filtered.append(d)
 
     rel_dets_filtered = []
     for r in rel_dets:
-        if dets[r["subj_id"]]["conf"] >= args.filtering_trs and dets[r["obj_id"]]["conf"] >= args.filtering_trs:
+        if r["conf"] <= args.min_rel_score:
+             continue
+        if dets[r["subj_id"]]["conf"] >= args.min_rel_score and dets[r["obj_id"]]["conf"] >= args.min_rel_score:
              new_r = r
              new_r["subj_id"] = new_id[r["subj_id"]]
              new_r["obj_id"] = new_id[r["obj_id"]]
@@ -167,7 +171,7 @@ def main():
 
     rects = [d["rect"] for d in dets]
     scores = [d["conf"] for d in dets]
-    
+
     if cfg.MODEL.ATTRIBUTE_ON and args.visualize_attr:
         attr_labels = [','.join(d["attr"]) for d in dets]
         attr_scores = [d["attr_conf"] for d in dets]
@@ -178,12 +182,13 @@ def main():
 
     draw_bb(cv2_img, rects, labels, scores)
 
-    #if cfg.MODEL.RELATION_ON and args.visualize_relation:
-        #rel_subj_centers = [r['subj_center'] for r in rel_dets]
-        #rel_obj_centers = [r['obj_center'] for r in rel_dets]
-        #rel_scores = [r['conf'] for r in rel_dets]
-        #rel_labels = [r['class'] for r in rel_dets]
-        #draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
+    if cfg.MODEL.RELATION_ON and args.visualize_relation:
+        rel_subj_centers = [r['subj_center'] for r in rel_dets]
+        rel_obj_centers = [r['obj_center'] for r in rel_dets]
+
+        rel_scores = [r['conf'] for r in rel_dets]
+        rel_labels = [r['class'] for r in rel_dets]
+        draw_rel(cv2_img, rel_subj_centers, rel_obj_centers, rel_labels, rel_scores)
 
     if not args.save_file:
         save_file = op.splitext(args.img_file)[0] + "_annotated.jpg"

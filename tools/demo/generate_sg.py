@@ -74,8 +74,10 @@ def main():
                         help="visualize the object attributes")
     parser.add_argument("--visualize_relation", action="store_true",
                         help="visualize the relationships")
-    parser.add_argument("--filtering_trs", metavar="THRESHOLD", type=restricted_float,
-                    help="filtering treshold to filter objects and relationships generation")
+    parser.add_argument("--min_obj_score", metavar="OBJECTS THRESHOLD", type=restricted_float,
+                    	help="threshold to filter objects generation")
+    parser.add_argument("--min_rel_score", metavar="RELATIONSHIPS THRESHOLD", type=restricted_float,
+                        help="threshold to filter relationships generation")
     parser.add_argument("opts", default=None, nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")
 
@@ -171,11 +173,11 @@ def main():
              "edges":[],
              "lighthouse":[]
 	    }
-    
+
     accepted_nodes = set()
-    
+
     for id,rect in enumerate(rects):
-        if scores[id] < args.filtering_trs:
+        if scores[id] <= args.min_obj_score:
             continue
         accepted_nodes.add(id)
         node = {"id": id, "bb": rect, "kg_mapping":[], "class": [labels[id].strip()], "confidence":[scores[id]], "expert": ["causal_tde"]}
@@ -184,7 +186,8 @@ def main():
     # merge(dets[rel['subj_id']]['rect'], dets[rel['obj_id']]['rect'])
 
     for rel in rel_dets:
-        
+        if rel['conf'] >= args.min_rel_score:
+            continue
         if rel["subj_id"] in accepted_nodes and rel["obj_id"] in accepted_nodes:
              edge = {"source": rel["subj_id"], "dest": rel["obj_id"], "bb": [], "class": [rel["class"]], "confidence": [rel["conf"]], "expert": ["causal_tde"]}
              graph["edges"].append(edge)
