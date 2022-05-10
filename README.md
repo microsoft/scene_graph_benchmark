@@ -1,5 +1,13 @@
 # Scene Graph Benchmark in PyTorch 1.7.1
 
+## DISCLAIMER
+
+**This is a work in progress**, this is a fork of the original [GitHub repository microsoft/scene_graph_benchmark](https://github.com/microsoft/scene_graph_benchmark)
+For any question you can contact:
+ - Davide Mottin <davide@cs.au.dk>
+ - Matte Lissandrini <matteo@cs.aau.dk>
+
+
 ## 0. Prerequisites
 
 
