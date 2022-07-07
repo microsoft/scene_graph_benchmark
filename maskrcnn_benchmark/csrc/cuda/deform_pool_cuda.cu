@@ -8,7 +8,10 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 
-#include <THC/THC.h>
+// #include <THC/THC.h>
+#include <ATen/ceil_div.h>
+
+#include <c10/cuda/CUDAGuard.h>
 #include <THC/THCDeviceUtils.cuh>
 
 #include <vector>

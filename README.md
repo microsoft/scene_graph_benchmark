@@ -1,4 +1,4 @@
-# Scene Graph Benchmark in PyTorch 1.7
+# Scene Graph Benchmark in PyTorch 1.12
 
 **This project is based on [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark)**
 
@@ -6,7 +6,7 @@
 
 
 ## Highlights
-- **Upgrad to pytorch 1.7**
+- **Upgrad to pytorch 1.12**
 - **Multi-GPU training and inference**
 - **Batched inference:** can perform inference using multiple images per batch per GPU.
 - **Fast and flexible tsv dataset format**

@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 
-if torch._six.PY3:
+try:
     import importlib
     import importlib.util
     import sys
@@ -15,7 +15,7 @@ if torch._six.PY3:
         if make_importable:
             sys.modules[module_name] = module
         return module
-else:
+except:
     import imp
 
     def import_file(module_name, file_path, make_importable=None):
