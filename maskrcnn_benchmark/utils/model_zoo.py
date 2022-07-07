@@ -2,14 +2,11 @@
 import os
 import sys
 
-try:
-    from torch.hub import _download_url_to_file
-    from torch.hub import urlparse
-    from torch.hub import HASH_REGEX
-except ImportError:
-    from torch.utils.model_zoo import _download_url_to_file
-    from torch.utils.model_zoo import urlparse
-    from torch.utils.model_zoo import HASH_REGEX
+
+from torch.hub import download_url_to_file as _download_url_to_file
+from torch.hub import urlparse
+from torch.hub import HASH_REGEX
+
 
 from maskrcnn_benchmark.utils.comm import is_main_process
 from maskrcnn_benchmark.utils.comm import synchronize
@@ -39,6 +36,7 @@ def cache_url(url, model_dir=None, progress=True):
         model_dir = os.getenv("TORCH_MODEL_ZOO", os.path.join(torch_home, "models"))
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+    print(url)
     parts = urlparse(url)
     filename = os.path.basename(parts.path)
     if filename == "model_final.pkl":
